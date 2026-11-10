@@ -91,3 +91,107 @@ export function getEffectiveEventStatus(event: {
 
   return (event.status as EventStatus) || 'Terjadwal';
 }
+
+/**
+ * Format teks penugasan untuk dibagikan di WhatsApp Group (WAG Lembur)
+ * Sesuai format standar:
+ * Nama : Hadi, Ari, Alfen
+ * Tanggal : 9 November 2026
+ * Jam Mulai : 17.00
+ * Jam Selesai : 21.00
+ * Kegiatan : GR Agenda Colony Insight 2026
+ *
+ *
+ * Catatan : -
+ */
+export function generateWAGBroadcastText(event: OvertimeEvent): string {
+  // 1. Nama teknisi yang ditugaskan
+  const names =
+    event.assignedMemberNames && event.assignedMemberNames.length > 0
+      ? event.assignedMemberNames.join(', ')
+      : '-';
+
+  // 2. Format tanggal bahasa Indonesia (contoh: 9 November 2026)
+  let formattedDate = event.date;
+  try {
+    const [y, m, d] = event.date.split('-').map(Number);
+    if (y && m && d) {
+      const monthNamesIndo = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      ];
+      formattedDate = `${d} ${monthNamesIndo[m - 1]} ${y}`;
+    } else {
+      const dateObj = new Date(event.date + (event.date.includes('T') ? '' : 'T00:00:00'));
+      formattedDate = dateObj.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    }
+  } catch {
+    formattedDate = event.date;
+  }
+
+  // 3. Jam Mulai dan Jam Selesai (format titik khas WhatsApp: 17.00 & 21.00)
+  let start = event.startTime || '';
+  let end = event.endTime || '';
+
+  if ((!start || !end) && event.time && event.time.includes('-')) {
+    const parts = event.time.split('-');
+    if (parts.length === 2) {
+      if (!start) start = parts[0].trim();
+      if (!end) end = parts[1].trim().split(' ')[0];
+    }
+  }
+
+  start = start || '17:00';
+  end = end || '21:00';
+
+  const formattedStart = start.replace(':', '.');
+  const formattedEnd = end.replace(':', '.');
+
+  // 4. Kegiatan / Judul acara
+  const kegiatan = event.title || event.agenda || '-';
+
+  // Format baku sesuai permintaan user
+  return `Nama : ${names}
+Tanggal : ${formattedDate}
+Jam Mulai : ${formattedStart}
+Jam Selesai : ${formattedEnd}
+Kegiatan : ${kegiatan}
+
+
+Catatan : -`;
+}
+
+/**
+ * Salin teks ke clipboard secara cross-browser (Desktop & Mobile iOS/Android)
+ */
+export async function copyTextToClipboard(text: string): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fallback
+    }
+  }
+
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    textArea.remove();
+    return successful;
+  } catch (err) {
+    console.error('Clipboard copy error:', err);
+    return false;
+  }
+}

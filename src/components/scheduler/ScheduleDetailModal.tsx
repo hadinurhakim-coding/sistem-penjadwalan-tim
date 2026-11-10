@@ -20,9 +20,11 @@ import {
   RefreshCw,
   Ban,
   Loader2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { OvertimeEvent, EventStatus } from '@/types/overtime';
-import { getEffectiveEventStatus } from '@/lib/schedule-utils';
+import { getEffectiveEventStatus, generateWAGBroadcastText, copyTextToClipboard } from '@/lib/schedule-utils';
 
 interface ScheduleDetailModalProps {
   isOpen: boolean;
@@ -44,6 +46,7 @@ export function ScheduleDetailModal({
   const [currentStatus, setCurrentStatus] = React.useState<EventStatus>('Terjadwal');
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
   const [statusMessage, setStatusMessage] = React.useState<string | null>(null);
+  const [isCopied, setIsCopied] = React.useState(false);
 
   React.useEffect(() => {
     if (event) {
@@ -499,6 +502,37 @@ export function ScheduleDetailModal({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Salin Format WAG Lembur */}
+            <button
+              type="button"
+              onClick={async () => {
+                const text = generateWAGBroadcastText(event);
+                const ok = await copyTextToClipboard(text);
+                if (ok) {
+                  setIsCopied(true);
+                  setTimeout(() => setIsCopied(false), 2000);
+                }
+              }}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                isCopied
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
+                  : 'border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/40'
+              }`}
+              title="Salin template pengumuman WhatsApp Group Lembur"
+            >
+              {isCopied ? (
+                <>
+                  <Check className="size-3.5 text-emerald-600" />
+                  <span>Format WAG Tersalin!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="size-3.5 text-emerald-600" />
+                  <span>Salin Format WAG</span>
+                </>
+              )}
+            </button>
+
             <button
               type="button"
               onClick={onClose}

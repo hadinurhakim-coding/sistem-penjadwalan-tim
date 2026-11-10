@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { OvertimeEvent, EventStatus } from '@/types/overtime';
-import { getEffectiveEventStatus } from '@/lib/schedule-utils';
+import { getEffectiveEventStatus, generateWAGBroadcastText, copyTextToClipboard } from '@/lib/schedule-utils';
 import { ScheduleDetailModal } from '@/components/scheduler/ScheduleDetailModal';
 import {
   Search,
@@ -28,6 +28,8 @@ import {
   Eye,
   Clock4,
   Ban,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 interface UpcomingListViewProps {
@@ -66,6 +68,20 @@ export function UpcomingListView({
   const [confirmDeleteEvent, setConfirmDeleteEvent] = React.useState<OvertimeEvent | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState('');
+  const [copiedEventId, setCopiedEventId] = React.useState<string | null>(null);
+
+  // Copy Format WAG Lembur Handler
+  const handleCopyWAGFormat = async (evt: OvertimeEvent) => {
+    const text = generateWAGBroadcastText(evt);
+    const success = await copyTextToClipboard(text);
+    if (success) {
+      setCopiedEventId(evt.id);
+      setTimeout(() => {
+        setCopiedEventId(null);
+        setActiveMenuId(null);
+      }, 1500);
+    }
+  };
 
   // Close menus when clicking outside
   const filterRef = React.useRef<HTMLDivElement>(null);
@@ -719,6 +735,25 @@ export function UpcomingListView({
                                 <span>Edit Jadwal</span>
                               </button>
                             )}
+                            {/* Tombol Siap Copy Format WAG Lembur (di bawah opsi Edit Jadwal) */}
+                            <button
+                              type="button"
+                              onClick={() => handleCopyWAGFormat(evt)}
+                              className="w-full px-3 py-1.5 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors cursor-pointer font-medium"
+                              title="Salin template pengumuman WhatsApp Group Lembur"
+                            >
+                              {copiedEventId === evt.id ? (
+                                <>
+                                  <Check className="size-3 text-emerald-600 dark:text-emerald-400" />
+                                  <span className="font-bold">Format WAG Tersalin!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="size-3 text-emerald-600 dark:text-emerald-400" />
+                                  <span>Salin Format WAG</span>
+                                </>
+                              )}
+                            </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -925,6 +960,30 @@ export function UpcomingListView({
                   </button>
 
                   <div className="flex items-center gap-1.5">
+                    {/* Copy WAG Format button for mobile */}
+                    <button
+                      type="button"
+                      onClick={() => handleCopyWAGFormat(evt)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer shadow-2xs ${
+                        copiedEventId === evt.id
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
+                          : 'border-slate-200 dark:border-zinc-700 bg-white dark:bg-black text-slate-700 dark:text-zinc-200 hover:border-emerald-500 hover:text-emerald-600'
+                      }`}
+                      title="Salin template pengumuman WhatsApp Group Lembur"
+                    >
+                      {copiedEventId === evt.id ? (
+                        <>
+                          <Check className="size-3.5 text-emerald-600" />
+                          <span className="font-bold">Tersalin!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="size-3.5 text-emerald-600" />
+                          <span>Salin WAG</span>
+                        </>
+                      )}
+                    </button>
+
                     {onEditSchedule && (
                       <button
                         type="button"
