@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { OvertimeEvent, EventStatus } from '@/types/overtime';
+import { getEffectiveEventStatus } from '@/lib/schedule-utils';
 import { ScheduleDetailModal } from '@/components/scheduler/ScheduleDetailModal';
 import {
   Search,
@@ -136,8 +137,9 @@ export function UpcomingListView({
   };
 
   // Helper status badge renderer
-  const renderStatusBadge = (status?: string) => {
-    if (status === 'Batal') {
+  const renderStatusBadge = (status?: string, evt?: OvertimeEvent) => {
+    const effectiveStatus = evt ? getEffectiveEventStatus(evt) : (status || 'Terjadwal');
+    if (effectiveStatus === 'Batal') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60">
           <span className="size-1.5 rounded-full bg-rose-500" />
@@ -145,7 +147,7 @@ export function UpcomingListView({
         </span>
       );
     }
-    if (status === 'Berubah') {
+    if (effectiveStatus === 'Berubah') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
           <span className="size-1.5 rounded-full bg-amber-500" />
@@ -153,7 +155,7 @@ export function UpcomingListView({
         </span>
       );
     }
-    if (status === 'Completed' || status === 'Selesai') {
+    if (effectiveStatus === 'Completed' || effectiveStatus === 'Selesai') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
           <span className="size-1.5 rounded-full bg-blue-500" />
@@ -173,6 +175,8 @@ export function UpcomingListView({
   const filteredEvents = React.useMemo(() => {
     return events
       .filter((evt) => {
+        const effectiveStatus = getEffectiveEventStatus(evt);
+
         // Search Filter
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
@@ -182,7 +186,7 @@ export function UpcomingListView({
           const matchCategory = evt.taskCategory?.toLowerCase().includes(q);
           const matchTaskType = evt.taskType?.toLowerCase().includes(q);
           const matchRoom = evt.room?.toLowerCase().includes(q);
-          const matchStatus = evt.status?.toLowerCase().includes(q);
+          const matchStatus = effectiveStatus.toLowerCase().includes(q) || evt.status?.toLowerCase().includes(q);
           const matchId = evt.id?.toLowerCase().includes(q);
           if (!matchTitle && !matchAgenda && !matchMember && !matchCategory && !matchTaskType && !matchRoom && !matchStatus && !matchId) {
             return false;
@@ -191,16 +195,16 @@ export function UpcomingListView({
 
         // Category / Status Filter
         if (filterCategory === 'Terjadwal') {
-          return !evt.status || evt.status === 'Terjadwal' || evt.status === 'Upcoming Session' || evt.status === 'In Progress';
+          return effectiveStatus === 'Terjadwal' || effectiveStatus === 'Upcoming Session' || effectiveStatus === 'In Progress';
         }
         if (filterCategory === 'Selesai') {
-          return evt.status === 'Completed' || evt.status === 'Selesai';
+          return effectiveStatus === 'Completed' || effectiveStatus === 'Selesai';
         }
         if (filterCategory === 'Batal') {
-          return evt.status === 'Batal';
+          return effectiveStatus === 'Batal';
         }
         if (filterCategory === 'Berubah') {
-          return evt.status === 'Berubah';
+          return effectiveStatus === 'Berubah';
         }
         if (filterCategory === 'Tugas Pokok') {
           return !evt.taskCategory || evt.taskCategory === 'Tugas Pokok';
@@ -641,7 +645,7 @@ export function UpcomingListView({
 
                     {/* Status badge matching Active, Selesai, Batal, Berubah */}
                     <td className="py-3 px-4 whitespace-nowrap">
-                      {renderStatusBadge(evt.status)}
+                      {renderStatusBadge(evt.status, evt)}
                     </td>
 
                     {/* Actions matching the 3-dots in Gambar 1 */}
@@ -650,7 +654,7 @@ export function UpcomingListView({
                         {/* Direct Detail View Action Button */}
                         <button
                           type="button"
-                          onClick={() => setSelectedDetailEvent(evt)}
+                          onClick={() => setSelectedDetailEvent({ ...evt, status: getEffectiveEventStatus(evt) })}
                           className="p-1 rounded-md text-slate-400 hover:text-[#00A2E9] dark:hover:text-[#38BDF8] hover:bg-[#E0F2FE]/50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                           title="Lihat Detail Agenda"
                         >

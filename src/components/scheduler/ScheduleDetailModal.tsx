@@ -22,6 +22,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { OvertimeEvent, EventStatus } from '@/types/overtime';
+import { getEffectiveEventStatus } from '@/lib/schedule-utils';
 
 interface ScheduleDetailModalProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export function ScheduleDetailModal({
 
   React.useEffect(() => {
     if (event) {
-      const s = (event.status as EventStatus) || 'Terjadwal';
+      const s = getEffectiveEventStatus(event);
       setCurrentStatus(s);
       setStatusMessage(null);
     }

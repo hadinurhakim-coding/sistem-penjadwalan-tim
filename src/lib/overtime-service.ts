@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { sql } from './db';
+import { getEffectiveEventStatus } from '@/lib/schedule-utils';
 import {
   Member,
   OvertimeEvent,
@@ -49,6 +50,15 @@ const DEFAULT_STORE: OvertimeStore = {
 
 // Map row database Neon Postgres ke OvertimeEvent
 function mapRowToEvent(row: any): OvertimeEvent {
+  const rawStatus = row.status || 'Upcoming Session';
+  const effectiveStatus = getEffectiveEventStatus({
+    date: row.date,
+    startTime: row.start_time || undefined,
+    endTime: row.end_time || undefined,
+    time: row.time || undefined,
+    status: rawStatus,
+  });
+
   return {
     id: row.id,
     title: row.title,
@@ -69,7 +79,7 @@ function mapRowToEvent(row: any): OvertimeEvent {
       typeof row.assigned_member_names === 'string'
         ? JSON.parse(row.assigned_member_names)
         : row.assigned_member_names || [],
-    status: row.status || 'Upcoming Session',
+    status: effectiveStatus,
     technicianRoles: row.technician_roles
       ? typeof row.technician_roles === 'string'
         ? JSON.parse(row.technician_roles)
@@ -101,6 +111,16 @@ export async function getOvertimeStore(): Promise<OvertimeStore> {
         await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS room VARCHAR(255)`;
         await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS task_type VARCHAR(255)`;
         await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS technician_roles JSONB DEFAULT '{}'::jsonb`;
+
+        // Otomatis sinkronisasi status agenda yang sudah terlewat tanggalnya dan bukan Batal menjadi Selesai di Neon Postgres
+        await sql`
+          UPDATE events
+          SET status = 'Selesai'
+          WHERE status != 'Batal'
+            AND status != 'Selesai'
+            AND status != 'Completed'
+            AND date < TO_CHAR(NOW() AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD')
+        `.catch(() => {});
 
         // Inisialisasi awal default rooms ke dalam database Neon Postgres jika tabel masih kosong
         const roomCountRes = await sql`SELECT count(*)::int as cnt FROM rooms`.catch(() => [{ cnt: 1 }]);
@@ -170,9 +190,14 @@ export async function getOvertimeStore(): Promise<OvertimeStore> {
     const parsed = JSON.parse(fileContent);
     const taskTypes = Array.isArray(parsed.taskTypes) ? parsed.taskTypes : [...DEFAULT_TASK_TYPES];
     const rooms = Array.isArray(parsed.rooms) ? parsed.rooms : [...DEFAULT_ROOMS];
+    const rawEvents: OvertimeEvent[] = Array.isArray(parsed.events) ? parsed.events : [];
+    const events: OvertimeEvent[] = rawEvents.map((ev) => ({
+      ...ev,
+      status: getEffectiveEventStatus(ev),
+    }));
     return {
       members: parsed.members || DEFAULT_MEMBERS,
-      events: parsed.events || [],
+      events,
       taskTypes,
       rooms,
     };
@@ -315,7 +340,10 @@ export async function getFullOvertimeData(): Promise<OvertimeApiResponse> {
     rankedMembers,
     topCandidates: rankedMembers.slice(0, 2),
     backupCandidates: rankedMembers.slice(2, 4),
-    events: store.events,
+    events: store.events.map((ev) => ({
+      ...ev,
+      status: getEffectiveEventStatus(ev),
+    })),
     metrics,
     taskTypes: store.taskTypes || DEFAULT_TASK_TYPES,
     rooms: store.rooms || DEFAULT_ROOMS,

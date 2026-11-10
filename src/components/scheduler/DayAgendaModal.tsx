@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OvertimeEvent } from '@/types/overtime';
+import { getEffectiveEventStatus } from '@/lib/schedule-utils';
 
 interface DayAgendaModalProps {
   isOpen: boolean;
@@ -184,23 +185,28 @@ export function DayAgendaModal({
 
                     {/* Action Buttons: Status Badge, Edit, and Delete */}
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                        evt.status === 'Batal'
-                          ? 'bg-rose-50 text-rose-600 border-rose-200'
-                          : evt.status === 'Berubah'
-                          ? 'bg-amber-50 text-amber-600 border-amber-200'
-                          : evt.status === 'Completed' || evt.status === 'Selesai'
-                          ? 'bg-blue-50 text-blue-600 border-blue-200'
-                          : 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                      }`}>
-                        {evt.status === 'Batal'
-                          ? 'Batal'
-                          : evt.status === 'Berubah'
-                          ? 'Berubah'
-                          : evt.status === 'Completed' || evt.status === 'Selesai'
-                          ? 'Selesai'
-                          : 'Terjadwal'}
-                      </span>
+                      {(() => {
+                        const effectiveStatus = getEffectiveEventStatus(evt);
+                        return (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            effectiveStatus === 'Batal'
+                              ? 'bg-rose-50 text-rose-600 border-rose-200'
+                              : effectiveStatus === 'Berubah'
+                              ? 'bg-amber-50 text-amber-600 border-amber-200'
+                              : effectiveStatus === 'Completed' || effectiveStatus === 'Selesai'
+                              ? 'bg-blue-50 text-blue-600 border-blue-200'
+                              : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                          }`}>
+                            {effectiveStatus === 'Batal'
+                              ? 'Batal'
+                              : effectiveStatus === 'Berubah'
+                              ? 'Berubah'
+                              : effectiveStatus === 'Completed' || effectiveStatus === 'Selesai'
+                              ? 'Selesai'
+                              : 'Terjadwal'}
+                          </span>
+                        );
+                      })()}
 
                       {/* Edit Button */}
                       <button
