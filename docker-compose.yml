@@ -1,0 +1,18 @@
+services:
+  overtime-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iconplus_overtime_dashboard
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    volumes:
+      # Persistent storage for rolling overtime balance & event history
+      - ./data:/app/data
