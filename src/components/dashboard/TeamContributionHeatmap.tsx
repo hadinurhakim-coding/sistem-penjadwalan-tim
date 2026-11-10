@@ -162,20 +162,22 @@ export function TeamContributionHeatmap({
           .filter((ev) => ev.category === 'Tugas Support')
           .reduce((acc, ev) => acc + ev.hours, 0);
 
-        // Skala intensitas warna dot heatmap (berdasarkan aturan jam beban kerja):
-        // Level 0 (Putih / Kosong): 0 jam
-        // Level 1 / "color level 2 (setelah putih)": 1 - 3 jam
-        // Level 3 / "color level 3": 4 - 8 jam (standar 1 - 2 sesi lembur @ 4 jam)
-        // Level 4 / "color level 4 (selebihnya)": > 8 jam (sangat padat / lembur maraton)
+        // Skala intensitas warna dot heatmap murni berdasarkan JUMLAH AGENDA per tanggal:
+        // 0 agenda: Abu-abu pucat
+        // 1 agenda: Biru muda (#BAE6FD)
+        // 2 agenda: Cyan (#00A2E9)
+        // 3 atau lebih agenda: Biru tua (#005596)
+        // Catatan: Durasi jam dan jumlah personil tidak menaikkan tingkat warna.
+        const agendaCount = filteredEvents.length;
         let level: 0 | 1 | 2 | 3 | 4 = 0;
-        if (dayTotalHours > 8 || filteredEvents.length >= 3) {
-          level = 4; // Selebihnya (> 8 Jam) -> Biru Pekat Navy (#005596)
-        } else if (dayTotalHours >= 4 || filteredEvents.length >= 2) {
-          level = 3; // 4 - 8 Jam -> Biru Cyan Primary (#00A2E9)
-        } else if (dayTotalHours >= 1 || filteredEvents.length === 1) {
-          level = 1; // 1 - 3 Jam -> Biru Muda Halus setelah warna putih (#BAE6FD)
+        if (agendaCount >= 3) {
+          level = 4; // 3 atau lebih Agenda -> Biru tua (#005596)
+        } else if (agendaCount === 2) {
+          level = 3; // 2 Agenda -> Cyan (#00A2E9)
+        } else if (agendaCount === 1) {
+          level = 1; // 1 Agenda -> Biru muda (#BAE6FD)
         } else {
-          level = 0; // 0 Jam -> Putih / Abu-abu
+          level = 0; // 0 Agenda -> Abu-abu pucat
         }
 
         if (filteredEvents.length > 0) {
@@ -253,18 +255,18 @@ export function TeamContributionHeatmap({
       ? 'Seluruh Tim Multimedia'
       : members.find((m) => m.id === selectedMemberId)?.name || 'Teknisi';
 
-  // Heatmap square color mapper using official PLN Icon Plus tones
+  // Heatmap square color mapper based strictly on agenda count
   const getCellColor = (level: number) => {
     switch (level) {
       case 1:
-        return 'bg-[#BAE6FD] hover:ring-2 hover:ring-[#00A2E9]'; // Level 1 (Setelah warna putih): 1 - 3 Jam
+        return 'bg-[#BAE6FD] hover:ring-2 hover:ring-[#00A2E9]'; // 1 Agenda: Biru muda
       case 2:
       case 3:
-        return 'bg-[#00A2E9] hover:ring-2 hover:ring-[#FFD100]'; // Level 3: 4 - 8 Jam (Standar 1 - 2 Sesi)
+        return 'bg-[#00A2E9] hover:ring-2 hover:ring-[#FFD100]'; // 2 Agenda: Cyan
       case 4:
-        return 'bg-[#005596] hover:ring-2 hover:ring-[#FFD100]'; // Level 4: > 8 Jam (Selebihnya / Sangat Padat)
+        return 'bg-[#005596] hover:ring-2 hover:ring-[#FFD100]'; // 3 atau lebih Agenda: Biru tua
       default:
-        return 'bg-slate-100 dark:bg-zinc-800/60 hover:bg-slate-200 dark:hover:bg-zinc-700'; // Level 0: 0 Jam (Putih / Kosong)
+        return 'bg-slate-100 dark:bg-zinc-800/60 hover:bg-slate-200 dark:hover:bg-zinc-700'; // 0 Agenda: Abu-abu pucat
     }
   };
 
@@ -498,7 +500,7 @@ export function TeamContributionHeatmap({
           <div className="flex flex-wrap items-center justify-between text-[11px] text-[#64748B] dark:text-zinc-400 pt-3.5 mt-2 border-t border-slate-100 dark:border-[#1F1F1F] gap-3">
             <div className="flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5 text-[#00A2E9]" />
-              <span>Sistem rotasi lembur bergulir adil (Standar 4 Jam/Sesi)</span>
+              <span>Warna dot: 1 Agenda = Biru muda, 2 Agenda = Cyan, ≥ 3 Agenda = Biru tua</span>
             </div>
 
             {/* GitHub-style Legend with PLN Icon Plus Palette */}
@@ -506,19 +508,19 @@ export function TeamContributionHeatmap({
               <span className="text-[10px] font-medium text-[#64748B] dark:text-zinc-400">Kurang</span>
               <div
                 className="w-3 h-3 rounded-[2px] bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700"
-                title="Level 0: 0 Jam (Kosong / Tidak Ada Agenda)"
+                title="0 Agenda (Abu-abu pucat)"
               />
               <div
                 className="w-3 h-3 rounded-[2px] bg-[#BAE6FD]"
-                title="Level 1: 1 - 3 Jam (Setelah warna putih)"
+                title="1 Agenda (Biru muda)"
               />
               <div
                 className="w-3 h-3 rounded-[2px] bg-[#00A2E9]"
-                title="Level 3: 4 - 8 Jam (Standar 1 - 2 Sesi)"
+                title="2 Agenda (Cyan)"
               />
               <div
                 className="w-3 h-3 rounded-[2px] bg-[#005596]"
-                title="Level 4: > 8 Jam (Selebihnya / Sangat Padat)"
+                title="3 atau lebih Agenda (Biru tua)"
               />
               <span className="text-[10px] font-medium text-[#64748B] dark:text-zinc-400">Banyak</span>
             </div>
