@@ -33,6 +33,11 @@ export async function GET(req: NextRequest) {
     // Redirect pengguna langsung ke secure pre-signed URL bucket
     return NextResponse.redirect(presignedUrl);
   } catch (error: any) {
+    // Biarkan sinyal internal prerender Next.js lewat tanpa tercatat sebagai error
+    if (error?.digest === 'NEXT_PRERENDER_INTERRUPTED' || error?.message?.includes('bail out of prerendering')) {
+      throw error;
+    }
+
     console.error('Error saat membuat link unduh PDF:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Gagal mengakses dokumen PDF di Neon Bucket.' },
