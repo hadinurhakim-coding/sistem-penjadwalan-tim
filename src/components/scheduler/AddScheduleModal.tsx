@@ -179,6 +179,16 @@ export function AddScheduleModal({
   }, [isOpen, rankedMembers, preselectedDate, eventToEdit]);
 
   // Close dropdowns on outside click
+  // Auto-scroll dropdown teknisi ke dalam pandangan saat dibuka agar tidak terpotong
+  React.useEffect(() => {
+    if (isDropdownOpen && dropdownRef.current) {
+      const timer = setTimeout(() => {
+        dropdownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [isDropdownOpen]);
+
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -428,7 +438,7 @@ export function AddScheduleModal({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-xs pb-6">
           {/* ======================================================== */}
           {/* 1. GAMBAR 1 UI: Multiselect with placeholder and clear   */}
           {/* Database Table 'taskTypes' with dynamic edit / rename     */}
@@ -979,9 +989,9 @@ export function AddScheduleModal({
               <ChevronDown className="size-4 text-[#00A2E9] shrink-0" />
             </div>
 
-            {/* Dropdown Menu */}
+            {/* Dropdown Menu (In-flow accordion to prevent clipping & covering action buttons) */}
             {isDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 z-40 mt-1 rounded-xl bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-[#222222] shadow-xl p-2.5 animate-in fade-in zoom-in-95 duration-100">
+              <div className="mt-2 rounded-xl bg-slate-50/80 dark:bg-[#080808] border border-slate-200 dark:border-[#222222] shadow-sm p-2.5 animate-in fade-in duration-100">
                 {/* Search Box */}
                 <div className="relative mb-2">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
@@ -992,12 +1002,11 @@ export function AddScheduleModal({
                     placeholder="Cari nama teknisi / jabatan..."
                     className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#222222] text-xs placeholder-slate-400 focus:outline-none focus:border-[#00A2E9] focus:ring-1 focus:ring-[#00A2E9] bg-white dark:bg-[#050505] text-[#1E293B] dark:text-white"
                     autoFocus
-      
                   />
                 </div>
 
                 {/* Member Checkbox List */}
-                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
                   {filteredMembers.map((member) => {
                     const isSelected = selectedMemberIds.includes(member.id);
 
