@@ -544,7 +544,7 @@ export function UpcomingListView({
                   <tr
                     key={evt.id}
                     className={`hover:bg-[#F8FAFC] dark:hover:bg-[#121212] transition-colors group ${
-                      isCompact ? 'h-10' : 'h-14'
+                      isCompact ? 'h-11' : 'min-h-[58px]'
                     }`}
                   >
                     {/* # Code */}
@@ -560,50 +560,53 @@ export function UpcomingListView({
                       </button>
                     </td>
 
-                    {/* Description (Title + Agenda + Room) */}
-                    <td className="py-3 px-3 sm:px-4 min-w-0">
-                      <div className="min-w-0">
-                        <div className="font-bold text-[#0A2540] dark:text-white leading-snug flex items-center gap-1.5 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedDetailEvent(evt)}
-                            className="hover:text-[#00A2E9] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left truncate min-w-0 block font-bold"
-                            title={evt.taskType ? `${evt.taskType} ${evt.title}` : evt.title}
-                          >
-                            {evt.taskType && !evt.title.toLowerCase().startsWith(evt.taskType.toLowerCase()) ? (
-                              <span>
-                                <span className="text-[#005596] dark:text-[#38BDF8] mr-1.5 font-bold">{evt.taskType}</span>
-                                <span>{evt.title}</span>
-                              </span>
-                            ) : (
+                    {/* Description (Title + Agenda + Room di bawahnya) */}
+                    <td className="py-2.5 px-3 sm:px-4 min-w-0 align-middle">
+                      <div className="min-w-0 flex flex-col gap-0.5">
+                        {/* 1. Baris Judul Agenda (Lebar penuh, tidak terdesak badge lokasi) */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDetailEvent(evt)}
+                          className="hover:text-[#00A2E9] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left truncate min-w-0 block font-bold text-[#0A2540] dark:text-white leading-snug"
+                          title={evt.taskType ? `${evt.taskType} ${evt.title}` : evt.title}
+                        >
+                          {evt.taskType && !evt.title.toLowerCase().startsWith(evt.taskType.toLowerCase()) ? (
+                            <span>
+                              <span className="text-[#005596] dark:text-[#38BDF8] mr-1.5 font-bold">{evt.taskType}</span>
                               <span>{evt.title}</span>
-                            )}
-                          </button>
-                          {evt.room && (
-                            <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold text-[#005596] dark:text-[#38BDF8] bg-[#E0F2FE] dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-[#00A2E9]/20">
-                              <MapPin className="size-2.5 shrink-0" />
-                              <span className="truncate max-w-[110px]">{evt.room}</span>
                             </span>
+                          ) : (
+                            <span>{evt.title}</span>
                           )}
-                        </div>
+                        </button>
+
+                        {/* 2. Uraian Tugas / Agenda Teknis (Contoh: Operator FOH) */}
                         {evt.agenda && (
-                          <div className="text-[11px] text-[#64748B] dark:text-[#A1A1AA] truncate mt-0.5" title={evt.agenda}>
+                          <div className="text-[11px] text-[#64748B] dark:text-[#A1A1AA] truncate leading-tight" title={evt.agenda}>
                             {evt.agenda}
                           </div>
                         )}
-                        {evt.pdfFileKey && (
-                          <div className="mt-1">
+
+                        {/* 3. Kotak Data Lokasi / Ruangan (Tersimpan di bawah di kolom Description) */}
+                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                          {evt.room && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#005596] dark:text-[#38BDF8] bg-[#E0F2FE] dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-[#00A2E9]/20 leading-none">
+                              <MapPin className="size-2.5 shrink-0" />
+                              <span className="truncate max-w-[170px]">{evt.room}</span>
+                            </span>
+                          )}
+                          {evt.pdfFileKey && (
                             <a
                               href={`/api/agenda/pdf?key=${encodeURIComponent(evt.pdfFileKey)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E0F2FE] dark:bg-zinc-900 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/30 text-[10px] font-bold hover:bg-[#005596] hover:text-white transition-colors"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#E0F2FE] dark:bg-zinc-900 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/30 text-[10px] font-bold hover:bg-[#005596] hover:text-white transition-colors leading-none"
                             >
-                              <FileText className="size-3 text-[#00A2E9] shrink-0" />
-                              <span className="truncate max-w-[130px]">{evt.pdfFileName || 'Laporan PDF'}</span>
+                              <FileText className="size-2.5 text-[#00A2E9] shrink-0" />
+                              <span className="truncate max-w-[130px]">{evt.pdfFileName || 'PDF'}</span>
                             </a>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </td>
 
