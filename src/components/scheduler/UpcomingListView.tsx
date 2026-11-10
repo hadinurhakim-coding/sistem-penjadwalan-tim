@@ -479,36 +479,46 @@ export function UpcomingListView({
       )}
 
       {/* Modern Data Table (Desktop >= md) */}
-      <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 dark:border-zinc-800">
-        <table className="w-full text-left border-collapse text-xs">
+      <div className="hidden md:block overflow-x-auto no-scrollbar rounded-xl border border-slate-200 dark:border-zinc-800">
+        <table className="w-full table-fixed text-left border-collapse text-xs">
+          <colgroup>
+            <col className="w-[8%] min-w-[70px]" />
+            <col className="w-[28%]" />
+            <col className="w-[10%]" />
+            <col className="w-[10%]" />
+            <col className="w-[11%]" />
+            <col className="w-[17%]" />
+            <col className="w-[8%]" />
+            <col className="w-[8%] min-w-[85px]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-slate-200 dark:border-zinc-800 bg-[#F8FAFC] dark:bg-black text-slate-500 dark:text-zinc-400 font-bold">
               <th
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="py-3 px-4 font-bold cursor-pointer select-none hover:text-[#00A2E9] transition-colors whitespace-nowrap"
+                className="py-3 px-3 sm:px-4 font-bold cursor-pointer select-none hover:text-[#00A2E9] transition-colors whitespace-nowrap"
               >
                 <div className="flex items-center gap-1.5">
                   <span># Code</span>
                   <ArrowUpDown className="size-3 opacity-60" />
                 </div>
               </th>
-              <th className="py-3 px-4 font-bold whitespace-nowrap">Description</th>
-              <th className="py-3 px-4 font-bold whitespace-nowrap">Type</th>
-              <th className="py-3 px-4 font-bold whitespace-nowrap">
+              <th className="py-3 px-3 sm:px-4 font-bold whitespace-nowrap">Description</th>
+              <th className="py-3 px-2.5 sm:px-3 font-bold whitespace-nowrap">Type</th>
+              <th className="py-3 px-2.5 sm:px-3 font-bold whitespace-nowrap">
                 <div className="flex items-center gap-1">
                   <Calendar className="size-3.5 opacity-70" />
                   <span>Tanggal</span>
                 </div>
               </th>
-              <th className="py-3 px-4 font-bold whitespace-nowrap">
+              <th className="py-3 px-2.5 sm:px-3 font-bold whitespace-nowrap">
                 <div className="flex items-center gap-1">
                   <Clock className="size-3.5 opacity-70" />
                   <span>Jam & Durasi</span>
                 </div>
               </th>
-              <th className="py-3 px-4 font-bold whitespace-nowrap">Teknisi Ditugaskan</th>
-              <th className="py-3 px-4 font-bold whitespace-nowrap">Status</th>
-              <th className="py-3 px-4 font-bold text-right whitespace-nowrap">Actions</th>
+              <th className="py-3 px-3 font-bold whitespace-nowrap">Teknisi Ditugaskan</th>
+              <th className="py-3 px-2.5 font-bold whitespace-nowrap">Status</th>
+              <th className="py-3 px-3 font-bold text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80 bg-white dark:bg-[#0A0A0A]">
@@ -538,7 +548,7 @@ export function UpcomingListView({
                     }`}
                   >
                     {/* # Code */}
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => setSelectedDetailEvent(evt)}
@@ -551,54 +561,56 @@ export function UpcomingListView({
                     </td>
 
                     {/* Description (Title + Agenda + Room) */}
-                    <td className="py-3 px-4 max-w-xs sm:max-w-md">
-                      <div className="font-bold text-[#0A2540] dark:text-white leading-snug line-clamp-1 flex items-center gap-1.5 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedDetailEvent(evt)}
-                          className="hover:text-[#00A2E9] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left truncate"
-                          title="Klik untuk melihat detail agenda"
-                        >
-                          {evt.taskType && !evt.title.toLowerCase().startsWith(evt.taskType.toLowerCase()) ? (
-                            <span>
-                              <span className="text-[#005596] dark:text-[#38BDF8] mr-1.5 font-bold">{evt.taskType}</span>
+                    <td className="py-3 px-3 sm:px-4 min-w-0">
+                      <div className="min-w-0">
+                        <div className="font-bold text-[#0A2540] dark:text-white leading-snug flex items-center gap-1.5 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDetailEvent(evt)}
+                            className="hover:text-[#00A2E9] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left truncate min-w-0 block font-bold"
+                            title={evt.taskType ? `${evt.taskType} ${evt.title}` : evt.title}
+                          >
+                            {evt.taskType && !evt.title.toLowerCase().startsWith(evt.taskType.toLowerCase()) ? (
+                              <span>
+                                <span className="text-[#005596] dark:text-[#38BDF8] mr-1.5 font-bold">{evt.taskType}</span>
+                                <span>{evt.title}</span>
+                              </span>
+                            ) : (
                               <span>{evt.title}</span>
+                            )}
+                          </button>
+                          {evt.room && (
+                            <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold text-[#005596] dark:text-[#38BDF8] bg-[#E0F2FE] dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-[#00A2E9]/20">
+                              <MapPin className="size-2.5 shrink-0" />
+                              <span className="truncate max-w-[110px]">{evt.room}</span>
                             </span>
-                          ) : (
-                            <span>{evt.title}</span>
                           )}
-                        </button>
-                        {evt.room && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#005596] dark:text-[#38BDF8] bg-[#E0F2FE] dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-[#00A2E9]/20">
-                            <MapPin className="size-2.5" />
-                            <span>{evt.room}</span>
-                          </span>
+                        </div>
+                        {evt.agenda && (
+                          <div className="text-[11px] text-[#64748B] dark:text-[#A1A1AA] truncate mt-0.5" title={evt.agenda}>
+                            {evt.agenda}
+                          </div>
+                        )}
+                        {evt.pdfFileKey && (
+                          <div className="mt-1">
+                            <a
+                              href={`/api/agenda/pdf?key=${encodeURIComponent(evt.pdfFileKey)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E0F2FE] dark:bg-zinc-900 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/30 text-[10px] font-bold hover:bg-[#005596] hover:text-white transition-colors"
+                            >
+                              <FileText className="size-3 text-[#00A2E9] shrink-0" />
+                              <span className="truncate max-w-[130px]">{evt.pdfFileName || 'Laporan PDF'}</span>
+                            </a>
+                          </div>
                         )}
                       </div>
-                      {evt.agenda && (
-                        <div className="text-[11px] text-[#64748B] dark:text-[#A1A1AA] line-clamp-1 mt-0.5">
-                          {evt.agenda}
-                        </div>
-                      )}
-                      {evt.pdfFileKey && (
-                        <div className="mt-1">
-                          <a
-                            href={`/api/agenda/pdf?key=${encodeURIComponent(evt.pdfFileKey)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E0F2FE] dark:bg-zinc-900 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/30 text-[10px] font-bold hover:bg-[#005596] hover:text-white transition-colors"
-                          >
-                            <FileText className="size-3 text-[#00A2E9]" />
-                            <span>{evt.pdfFileName || 'Laporan PDF'}</span>
-                          </a>
-                        </div>
-                      )}
                     </td>
 
-                    {/* Type (Tugas Pokok / Tugas Support) styled like Percentage (%) pill in Gambar 1 */}
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    {/* Type (Tugas Pokok / Tugas Support) */}
+                    <td className="py-3 px-2.5 sm:px-3 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                           isSupport
                             ? 'bg-[#00A2E9]/10 text-[#00A2E9] dark:text-[#38BDF8] border border-[#00A2E9]/25'
                             : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200/60 dark:border-zinc-700'
@@ -608,8 +620,8 @@ export function UpcomingListView({
                       </span>
                     </td>
 
-                    {/* Tanggal (Past dates shown in red e.g. 15 Jul 2026 in Gambar 1) */}
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    {/* Tanggal (Past dates shown in red) */}
+                    <td className="py-3 px-2.5 sm:px-3 whitespace-nowrap">
                       <span
                         className={`font-medium ${
                           past
@@ -621,15 +633,17 @@ export function UpcomingListView({
                       </span>
                     </td>
 
-                    {/* Jam & Durasi */}
-                    <td className="py-3 px-4 whitespace-nowrap text-[#64748B] dark:text-zinc-400 font-medium">
-                      <span>{evt.time || '17:00 - 21:00'}</span>
-                      <span className="text-[10px] ml-1 opacity-80">({evt.durationHours || 4} Jam)</span>
+                    {/* Jam & Durasi (Stacked vertically for optimal compactness) */}
+                    <td className="py-3 px-2.5 sm:px-3 whitespace-nowrap text-[#64748B] dark:text-zinc-400 font-medium">
+                      <div className="leading-tight">
+                        <span className="font-semibold text-[#1E293B] dark:text-zinc-200">{evt.time || '17:00 - 21:00'}</span>
+                        <span className="block text-[10px] text-slate-400 dark:text-zinc-500 font-normal">({evt.durationHours || 4} Jam)</span>
+                      </div>
                     </td>
 
-                    {/* Teknisi Ditugaskan */}
-                    <td className="py-3 px-4">
-                      <div className="flex flex-wrap items-center gap-1.5 max-w-xs">
+                    {/* Teknisi Ditugaskan (Compact badges with roles that wrap cleanly) */}
+                    <td className="py-3 px-3 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1 min-w-0">
                         {evt.assignedMemberNames?.length ? (
                           evt.assignedMemberNames.map((name, i) => {
                             const memberRoles: string[] = [];
@@ -644,11 +658,11 @@ export function UpcomingListView({
                             return (
                               <span
                                 key={i}
-                                title={memberRoles.length > 0 ? `Peran: ${memberRoles.join(', ')}` : undefined}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E0F2FE]/70 dark:bg-zinc-800 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/30 dark:border-zinc-700 text-[11px] font-medium whitespace-nowrap"
+                                title={memberRoles.length > 0 ? `${name} (Peran: ${memberRoles.join(', ')})` : name}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#E0F2FE]/70 dark:bg-zinc-800 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/30 dark:border-zinc-700 text-[10.5px] font-medium leading-none whitespace-nowrap"
                               >
-                                <UserCheck className="size-3 text-[#00A2E9] dark:text-[#38BDF8]" />
-                                <span>{name}</span>
+                                <UserCheck className="size-2.5 text-[#00A2E9] dark:text-[#38BDF8] shrink-0" />
+                                <span className="font-semibold">{name}</span>
                                 {memberRoles.length > 0 && (
                                   <span className="text-[9px] px-1 py-0.2 rounded bg-[#005596]/15 dark:bg-[#38BDF8]/20 font-bold text-[#005596] dark:text-[#38BDF8]">
                                     {memberRoles[0]}
@@ -667,13 +681,13 @@ export function UpcomingListView({
                     </td>
 
                     {/* Status badge matching Active, Selesai, Batal, Berubah */}
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3 px-2.5 whitespace-nowrap">
                       {renderStatusBadge(evt.status, evt)}
                     </td>
 
                     {/* Actions matching the 3-dots in Gambar 1 */}
-                    <td className="py-3 px-4 text-right whitespace-nowrap relative">
-                      <div className="inline-flex items-center gap-1 justify-end row-action-menu">
+                    <td className="py-3 px-3 text-right whitespace-nowrap relative">
+                      <div className="inline-flex items-center gap-0.5 justify-end row-action-menu">
                         {/* Direct Detail View Action Button */}
                         <button
                           type="button"
@@ -717,7 +731,7 @@ export function UpcomingListView({
 
                         {/* Floating 3 Dots Menu */}
                         {activeMenuId === evt.id && (
-                          <div className="absolute right-4 top-full mt-1 z-30 w-44 rounded-xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-zinc-800 shadow-xl py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100">
+                          <div className="absolute right-2 top-full mt-1 z-30 w-44 rounded-xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-zinc-800 shadow-xl py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100">
                             <button
                               type="button"
                               onClick={() => {
