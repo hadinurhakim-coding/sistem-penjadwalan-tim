@@ -604,15 +604,33 @@ export function UpcomingListView({
                     <td className="py-3 px-4">
                       <div className="flex flex-wrap items-center gap-1.5 max-w-xs">
                         {evt.assignedMemberNames?.length ? (
-                          evt.assignedMemberNames.map((name, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E0F2FE]/70 dark:bg-zinc-800 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/30 dark:border-zinc-700 text-[11px] font-medium whitespace-nowrap"
-                            >
-                              <UserCheck className="size-3 text-[#00A2E9] dark:text-[#38BDF8]" />
-                              <span>{name}</span>
-                            </span>
-                          ))
+                          evt.assignedMemberNames.map((name, i) => {
+                            const memberRoles: string[] = [];
+                            if (evt.technicianRoles) {
+                              if (evt.technicianRoles.vjUtama === name) memberRoles.push('VJ Utama');
+                              if (evt.technicianRoles.coVjZoom === name) memberRoles.push('Co-VJ');
+                              if (evt.technicianRoles.kameramen === name) memberRoles.push('Kamera');
+                              if (evt.technicianRoles.switcherPtz === name) memberRoles.push('Switcher/PTZ');
+                              if (evt.technicianRoles.operatorPresentasi === name) memberRoles.push('Presentasi');
+                            }
+
+                            return (
+                              <span
+                                key={i}
+                                title={memberRoles.length > 0 ? `Peran: ${memberRoles.join(', ')}` : undefined}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E0F2FE]/70 dark:bg-zinc-800 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/30 dark:border-zinc-700 text-[11px] font-medium whitespace-nowrap"
+                              >
+                                <UserCheck className="size-3 text-[#00A2E9] dark:text-[#38BDF8]" />
+                                <span>{name}</span>
+                                {memberRoles.length > 0 && (
+                                  <span className="text-[9px] px-1 py-0.2 rounded bg-[#005596]/15 dark:bg-[#38BDF8]/20 font-bold text-[#005596] dark:text-[#38BDF8]">
+                                    {memberRoles[0]}
+                                    {memberRoles.length > 1 ? ` +${memberRoles.length - 1}` : ''}
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })
                         ) : (
                           <span className="text-slate-400 dark:text-zinc-500 italic text-[11px]">
                             Belum ditentukan

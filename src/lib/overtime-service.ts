@@ -13,6 +13,7 @@ import {
   TaskType,
   Room,
   EventStatus,
+  TechnicianRoles,
 } from '@/types/overtime';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -69,6 +70,11 @@ function mapRowToEvent(row: any): OvertimeEvent {
         ? JSON.parse(row.assigned_member_names)
         : row.assigned_member_names || [],
     status: row.status || 'Upcoming Session',
+    technicianRoles: row.technician_roles
+      ? typeof row.technician_roles === 'string'
+        ? JSON.parse(row.technician_roles)
+        : row.technician_roles
+      : undefined,
     notes: row.notes || undefined,
     pdfFileName: row.pdf_file_name || undefined,
     pdfFileKey: row.pdf_file_key || undefined,
@@ -94,6 +100,7 @@ export async function getOvertimeStore(): Promise<OvertimeStore> {
         `;
         await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS room VARCHAR(255)`;
         await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS task_type VARCHAR(255)`;
+        await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS technician_roles JSONB DEFAULT '{}'::jsonb`;
       } catch {}
 
       const [membersRows, eventsRows, taskTypesRows, roomsRows] = await Promise.all([
@@ -356,6 +363,7 @@ export async function recordOvertimeEvent(params: {
   returneesCount?: number;
   assignedMemberIds: string[];
   passMemberIds?: string[];
+  technicianRoles?: TechnicianRoles;
   status?: EventStatus;
   notes?: string;
   pdfFileName?: string;
@@ -419,6 +427,7 @@ export async function recordOvertimeEvent(params: {
     assignedMemberIds,
     assignedMemberNames: assignedNames,
     passMemberIds: params.passMemberIds || [],
+    technicianRoles: params.technicianRoles,
     status: params.status || 'Terjadwal',
     notes: params.notes || params.agenda || '',
     pdfFileName: params.pdfFileName,
@@ -437,14 +446,16 @@ export async function recordOvertimeEvent(params: {
       await sql`
         INSERT INTO events (
           id, title, date, start_time, end_time, time, task_category, task_type, room, agenda,
-          duration_hours, assigned_member_ids, assigned_member_names, status, notes,
+          duration_hours, assigned_member_ids, assigned_member_names, technician_roles, status, notes,
           pdf_file_name, pdf_file_key, pdf_file_size, pdf_uploaded_at, created_at
         ) VALUES (
           ${newEvent.id}, ${newEvent.title}, ${newEvent.date}, ${newEvent.startTime || null},
           ${newEvent.endTime || null}, ${newEvent.time || null}, ${newEvent.taskCategory || 'Tugas Pokok'},
           ${newEvent.taskType || null}, ${newEvent.room || null}, ${newEvent.agenda || null},
           ${newEvent.durationHours}, ${JSON.stringify(newEvent.assignedMemberIds)}::jsonb,
-          ${JSON.stringify(newEvent.assignedMemberNames)}::jsonb, ${newEvent.status || 'Upcoming Session'},
+          ${JSON.stringify(newEvent.assignedMemberNames)}::jsonb,
+          ${JSON.stringify(newEvent.technicianRoles || {})}::jsonb,
+          ${newEvent.status || 'Upcoming Session'},
           ${newEvent.notes || null}, ${newEvent.pdfFileName || null}, ${newEvent.pdfFileKey || null},
           ${newEvent.pdfFileSize || null}, ${newEvent.pdfUploadedAt || null}, ${newEvent.createdAt}
         )
@@ -480,6 +491,7 @@ export async function updateOvertimeEvent(params: {
   room?: string;
   agenda?: string;
   assignedMemberIds?: string[];
+  technicianRoles?: TechnicianRoles;
   status?: EventStatus;
   notes?: string;
   pdfFileName?: string;
@@ -538,6 +550,10 @@ export async function updateOvertimeEvent(params: {
     durationHours,
     assignedMemberIds,
     assignedMemberNames,
+    technicianRoles:
+      params.technicianRoles !== undefined
+        ? params.technicianRoles
+        : existing.technicianRoles,
     status: params.status !== undefined ? params.status : existing.status,
     pdfFileName: params.pdfFileName !== undefined ? params.pdfFileName : existing.pdfFileName,
     pdfFileKey: params.pdfFileKey !== undefined ? params.pdfFileKey : existing.pdfFileKey,
@@ -565,6 +581,7 @@ export async function updateOvertimeEvent(params: {
           duration_hours = ${updated.durationHours},
           assigned_member_ids = ${JSON.stringify(updated.assignedMemberIds)}::jsonb,
           assigned_member_names = ${JSON.stringify(updated.assignedMemberNames)}::jsonb,
+          technician_roles = ${JSON.stringify(updated.technicianRoles || {})}::jsonb,
           status = ${updated.status || 'Upcoming Session'},
           notes = ${updated.notes || null},
           pdf_file_name = ${updated.pdfFileName || null},

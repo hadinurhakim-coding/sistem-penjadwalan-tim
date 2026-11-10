@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/shadcn-studio/date-picker';
-import { RankedMember, TaskCategory, OvertimeEvent, TaskType, Room, EventStatus } from '@/types/overtime';
+import { RankedMember, TaskCategory, OvertimeEvent, TaskType, Room, EventStatus, TechnicianRoles } from '@/types/overtime';
 
 const DEFAULT_TASK_TYPES: TaskType[] = [
   { id: 'tt-1', name: 'Pemeliharaan Studio Multimedia', category: 'Tugas Pokok' },
@@ -125,6 +125,15 @@ export function AddScheduleModal({
   const [searchMemberQuery, setSearchMemberQuery] = React.useState('');
   const [selectedMemberIds, setSelectedMemberIds] = React.useState<string[]>([]);
 
+  // 8. Pembagian Peran Teknisi Multimedia
+  const [technicianRoles, setTechnicianRoles] = React.useState<TechnicianRoles>({
+    vjUtama: '',
+    coVjZoom: '',
+    kameramen: '',
+    switcherPtz: '',
+    operatorPresentasi: '',
+  });
+
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState('');
 
@@ -197,6 +206,23 @@ export function AddScheduleModal({
         }
         setPdfFile(null);
         setSelectedMemberIds(eventToEdit.assignedMemberIds || []);
+        if (eventToEdit.technicianRoles) {
+          setTechnicianRoles({
+            vjUtama: eventToEdit.technicianRoles.vjUtama || '',
+            coVjZoom: eventToEdit.technicianRoles.coVjZoom || '',
+            kameramen: eventToEdit.technicianRoles.kameramen || '',
+            switcherPtz: eventToEdit.technicianRoles.switcherPtz || '',
+            operatorPresentasi: eventToEdit.technicianRoles.operatorPresentasi || '',
+          });
+        } else {
+          setTechnicianRoles({
+            vjUtama: '',
+            coVjZoom: '',
+            kameramen: '',
+            switcherPtz: '',
+            operatorPresentasi: '',
+          });
+        }
         setError('');
         setIsDropdownOpen(false);
 
@@ -223,6 +249,13 @@ export function AddScheduleModal({
         setPdfFile(null);
         setSelectedTaskTypeId(null);
         setSelectedMemberIds([]);
+        setTechnicianRoles({
+          vjUtama: '',
+          coVjZoom: '',
+          kameramen: '',
+          switcherPtz: '',
+          operatorPresentasi: '',
+        });
         setError('');
         setIsDropdownOpen(false);
 
@@ -471,6 +504,8 @@ export function AddScheduleModal({
     );
   });
 
+  const selectedMembers = rankedMembers.filter((m) => selectedMemberIds.includes(m.id));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!scheduleTitle.trim()) {
@@ -531,6 +566,7 @@ export function AddScheduleModal({
         pdfFileSize: uploadedPdf ? uploadedPdf.size : null,
         pdfUploadedAt: uploadedPdf ? new Date().toISOString() : null,
         status: status || eventToEdit?.status || 'Terjadwal',
+        technicianRoles,
       };
       if (eventToEdit) {
         payload.id = eventToEdit.id;
@@ -1505,6 +1541,189 @@ export function AddScheduleModal({
               </div>
             )}
           </div>
+
+          {/* 8. Formulir Pembagian Peran Teknisi (Muncul Setelah Teknisi Dipilih) */}
+          {selectedMemberIds.length > 0 && (
+            <div className="space-y-3 p-3.5 sm:p-4 rounded-xl border border-[#00A2E9]/40 dark:border-zinc-800 bg-[#E0F2FE]/30 dark:bg-zinc-950/70 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="size-6 rounded-lg bg-[#005596] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    🎭
+                  </div>
+                  <div>
+                    <label className="font-bold text-xs text-[#0A2540] dark:text-white">
+                      Formulir Pembagian Peran Teknisi
+                    </label>
+                    <p className="text-[10px] text-[#64748B] dark:text-zinc-400">
+                      Pilih personil bertugas untuk masing-masing peran operasional multimedia
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tombol Bagi Peran Otomatis */}
+                {selectedMembers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const m = selectedMembers;
+                      setTechnicianRoles({
+                        vjUtama: m[0]?.name || '',
+                        coVjZoom: m[1]?.name || m[0]?.name || '',
+                        kameramen: m[2]?.name || m[0]?.name || '',
+                        switcherPtz: m[1]?.name || m[0]?.name || '',
+                        operatorPresentasi: m[3]?.name || m[1]?.name || m[0]?.name || '',
+                      });
+                    }}
+                    className="text-[10px] font-bold text-[#005596] dark:text-[#38BDF8] bg-white dark:bg-zinc-900 hover:bg-[#E0F2FE] px-2.5 py-1 rounded-md border border-[#00A2E9]/30 transition-colors cursor-pointer shadow-2xs"
+                    title="Bagi peran secara otomatis di antara personil terpilih"
+                  >
+                    ⚡ Bagi Peran Otomatis
+                  </button>
+                )}
+              </div>
+
+              {/* Grid 5 Peran: VJ Utama, Co-VJ/Host Zoom, Kameramen, Switcher/Pilot PTZ, Operator Presentasi/Asrtot */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                {/* 1. VJ Utama */}
+                <div className="p-2.5 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] shadow-2xs">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-xs text-[#0A2540] dark:text-zinc-200 flex items-center gap-1.5">
+                      <span>🎧</span>
+                      <span>VJ Utama</span>
+                    </span>
+                    <span className="text-[9px] font-semibold text-slate-400 dark:text-zinc-500">
+                      Lead Audio/Video
+                    </span>
+                  </div>
+                  <select
+                    value={technicianRoles.vjUtama || ''}
+                    onChange={(e) =>
+                      setTechnicianRoles((prev) => ({ ...prev, vjUtama: e.target.value }))
+                    }
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900 text-xs font-semibold text-[#1E293B] dark:text-zinc-200 focus:outline-none focus:border-[#00A2E9] cursor-pointer"
+                  >
+                    <option value="">-- Belum Ditugaskan --</option>
+                    {selectedMembers.map((m) => (
+                      <option key={m.id} value={m.name}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 2. Co-VJ / Host Zoom */}
+                <div className="p-2.5 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] shadow-2xs">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-xs text-[#0A2540] dark:text-zinc-200 flex items-center gap-1.5">
+                      <span>💻</span>
+                      <span>Co-VJ / Host Zoom</span>
+                    </span>
+                    <span className="text-[9px] font-semibold text-slate-400 dark:text-zinc-500">
+                      Vicon & Interaksi
+                    </span>
+                  </div>
+                  <select
+                    value={technicianRoles.coVjZoom || ''}
+                    onChange={(e) =>
+                      setTechnicianRoles((prev) => ({ ...prev, coVjZoom: e.target.value }))
+                    }
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900 text-xs font-semibold text-[#1E293B] dark:text-zinc-200 focus:outline-none focus:border-[#00A2E9] cursor-pointer"
+                  >
+                    <option value="">-- Belum Ditugaskan --</option>
+                    {selectedMembers.map((m) => (
+                      <option key={m.id} value={m.name}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 3. Kameramen */}
+                <div className="p-2.5 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] shadow-2xs">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-xs text-[#0A2540] dark:text-zinc-200 flex items-center gap-1.5">
+                      <span>🎥</span>
+                      <span>Kameramen</span>
+                    </span>
+                    <span className="text-[9px] font-semibold text-slate-400 dark:text-zinc-500">
+                      Shooting & Angle
+                    </span>
+                  </div>
+                  <select
+                    value={technicianRoles.kameramen || ''}
+                    onChange={(e) =>
+                      setTechnicianRoles((prev) => ({ ...prev, kameramen: e.target.value }))
+                    }
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900 text-xs font-semibold text-[#1E293B] dark:text-zinc-200 focus:outline-none focus:border-[#00A2E9] cursor-pointer"
+                  >
+                    <option value="">-- Belum Ditugaskan --</option>
+                    {selectedMembers.map((m) => (
+                      <option key={m.id} value={m.name}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 4. Switcher / Pilot Kamera PTZ */}
+                <div className="p-2.5 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] shadow-2xs">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-xs text-[#0A2540] dark:text-zinc-200 flex items-center gap-1.5">
+                      <span>🎛️</span>
+                      <span>Switcher / Pilot Kamera PTZ</span>
+                    </span>
+                    <span className="text-[9px] font-semibold text-slate-400 dark:text-zinc-500">
+                      Transisi & PTZ Control
+                    </span>
+                  </div>
+                  <select
+                    value={technicianRoles.switcherPtz || ''}
+                    onChange={(e) =>
+                      setTechnicianRoles((prev) => ({ ...prev, switcherPtz: e.target.value }))
+                    }
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900 text-xs font-semibold text-[#1E293B] dark:text-zinc-200 focus:outline-none focus:border-[#00A2E9] cursor-pointer"
+                  >
+                    <option value="">-- Belum Ditugaskan --</option>
+                    {selectedMembers.map((m) => (
+                      <option key={m.id} value={m.name}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 5. Operator Presentasi / Asrtot (Full width on sm) */}
+                <div className="p-2.5 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] shadow-2xs sm:col-span-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-xs text-[#0A2540] dark:text-zinc-200 flex items-center gap-1.5">
+                      <span>📽️</span>
+                      <span>Operator Presentasi / Asrtot</span>
+                    </span>
+                    <span className="text-[9px] font-semibold text-slate-400 dark:text-zinc-500">
+                      Materi, Slide & Video Playback
+                    </span>
+                  </div>
+                  <select
+                    value={technicianRoles.operatorPresentasi || ''}
+                    onChange={(e) =>
+                      setTechnicianRoles((prev) => ({
+                        ...prev,
+                        operatorPresentasi: e.target.value,
+                      }))
+                    }
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900 text-xs font-semibold text-[#1E293B] dark:text-zinc-200 focus:outline-none focus:border-[#00A2E9] cursor-pointer"
+                  >
+                    <option value="">-- Belum Ditugaskan --</option>
+                    {selectedMembers.map((m) => (
+                      <option key={m.id} value={m.name}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="pt-4 border-t border-slate-100 dark:border-[#222222] flex items-center justify-end gap-2.5">

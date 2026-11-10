@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS events (
     pdf_uploaded_at TIMESTAMPTZ,
     room VARCHAR(255),
     task_type VARCHAR(255),
+    technician_roles JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -134,3 +135,4 @@ ON CONFLICT (id) DO NOTHING;
 -- Migrasi tambahan kolom jika tabel events sudah ada sebelumnya
 ALTER TABLE events ADD COLUMN IF NOT EXISTS room VARCHAR(255);
 ALTER TABLE events ADD COLUMN IF NOT EXISTS task_type VARCHAR(255);
+ALTER TABLE events ADD COLUMN IF NOT EXISTS technician_roles JSONB DEFAULT '{}'::jsonb;

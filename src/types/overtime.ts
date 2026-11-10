@@ -28,6 +28,14 @@ export type EventStatus =
   | 'In Progress'
   | 'Completed';
 
+export interface TechnicianRoles {
+  vjUtama?: string; // VJ Utama
+  coVjZoom?: string; // Co-VJ / Host Zoom
+  kameramen?: string; // Kameramen
+  switcherPtz?: string; // Switcher / Pilot Kamera PTZ
+  operatorPresentasi?: string; // Operator Presentasi / Asrtot
+}
+
 export interface OvertimeEvent {
   id: string;
   title: string;
@@ -44,6 +52,7 @@ export interface OvertimeEvent {
   assignedMemberIds: string[];
   assignedMemberNames: string[];
   passMemberIds?: string[]; // members who passed/berhalangan
+  technicianRoles?: TechnicianRoles; // Pembagian peran teknisi: VJ Utama, Co-VJ/Host Zoom, Kameramen, Switcher/Pilot Kamera PTZ, Operator Presentasi/Asrtot
   status?: EventStatus;
   notes?: string;
   room?: string; // Nama Ruangan / Lokasi kegiatan

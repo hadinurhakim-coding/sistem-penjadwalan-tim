@@ -357,6 +357,73 @@ export function ScheduleDetailModal({
             </div>
           </div>
 
+          {/* Pembagian Peran Teknisi Multimedia (Jika Tersedia) */}
+          {event.technicianRoles && Object.values(event.technicianRoles).some(Boolean) && (
+            <div>
+              <h4 className="font-bold text-slate-800 dark:text-zinc-100 mb-2 flex items-center gap-2">
+                <span className="text-sm">🎭</span>
+                <span>Pembagian Peran Teknisi Multimedia</span>
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {event.technicianRoles.vjUtama && (
+                  <div className="p-2.5 rounded-xl border border-blue-100 dark:border-zinc-800 bg-[#E0F2FE]/40 dark:bg-zinc-900/60 flex items-center justify-between">
+                    <span className="font-semibold text-xs text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
+                      <span>🎧</span>
+                      <span>VJ Utama:</span>
+                    </span>
+                    <span className="font-bold text-xs text-[#005596] dark:text-[#38BDF8]">
+                      {event.technicianRoles.vjUtama}
+                    </span>
+                  </div>
+                )}
+                {event.technicianRoles.coVjZoom && (
+                  <div className="p-2.5 rounded-xl border border-blue-100 dark:border-zinc-800 bg-[#E0F2FE]/40 dark:bg-zinc-900/60 flex items-center justify-between">
+                    <span className="font-semibold text-xs text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
+                      <span>💻</span>
+                      <span>Co-VJ / Host Zoom:</span>
+                    </span>
+                    <span className="font-bold text-xs text-[#005596] dark:text-[#38BDF8]">
+                      {event.technicianRoles.coVjZoom}
+                    </span>
+                  </div>
+                )}
+                {event.technicianRoles.kameramen && (
+                  <div className="p-2.5 rounded-xl border border-blue-100 dark:border-zinc-800 bg-[#E0F2FE]/40 dark:bg-zinc-900/60 flex items-center justify-between">
+                    <span className="font-semibold text-xs text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
+                      <span>🎥</span>
+                      <span>Kameramen:</span>
+                    </span>
+                    <span className="font-bold text-xs text-[#005596] dark:text-[#38BDF8]">
+                      {event.technicianRoles.kameramen}
+                    </span>
+                  </div>
+                )}
+                {event.technicianRoles.switcherPtz && (
+                  <div className="p-2.5 rounded-xl border border-blue-100 dark:border-zinc-800 bg-[#E0F2FE]/40 dark:bg-zinc-900/60 flex items-center justify-between">
+                    <span className="font-semibold text-xs text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
+                      <span>🎛️</span>
+                      <span>Switcher / Pilot PTZ:</span>
+                    </span>
+                    <span className="font-bold text-xs text-[#005596] dark:text-[#38BDF8]">
+                      {event.technicianRoles.switcherPtz}
+                    </span>
+                  </div>
+                )}
+                {event.technicianRoles.operatorPresentasi && (
+                  <div className="p-2.5 rounded-xl border border-blue-100 dark:border-zinc-800 bg-[#E0F2FE]/40 dark:bg-zinc-900/60 flex items-center justify-between sm:col-span-2">
+                    <span className="font-semibold text-xs text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
+                      <span>📽️</span>
+                      <span>Operator Presentasi / Asrtot:</span>
+                    </span>
+                    <span className="font-bold text-xs text-[#005596] dark:text-[#38BDF8]">
+                      {event.technicianRoles.operatorPresentasi}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Uraian Tugas / Agenda Teknis */}
           <div>
             <h4 className="font-bold text-slate-800 dark:text-zinc-100 mb-1.5 flex items-center gap-2">
