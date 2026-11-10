@@ -91,6 +91,8 @@ export interface FairnessMetrics {
   totalDistributedHours: number;
   totalEvents: number;
   maxDiffHours: number;
+  minHours?: number;
+  maxHours?: number;
   fairnessRating: 'Keadilan Sempurna' | 'Sangat Seimbang' | 'Wajar' | 'Perlu Penyeimbangan';
   fairnessColor: string;
 }

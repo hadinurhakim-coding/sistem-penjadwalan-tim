@@ -285,6 +285,8 @@ export function computeFairnessMetrics(members: Member[], events: OvertimeEvent[
     totalDistributedHours,
     totalEvents: events.length,
     maxDiffHours,
+    minHours,
+    maxHours,
     fairnessRating,
     fairnessColor,
   };
