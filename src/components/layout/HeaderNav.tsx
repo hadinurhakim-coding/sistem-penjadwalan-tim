@@ -4,7 +4,8 @@ import * as React from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { LogOut, LayoutDashboard, CalendarDays, Trophy, Users } from 'lucide-react';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
 
 interface HeaderNavProps {
   activeTab: 'dashboard' | 'upcoming' | 'assigned' | 'settings';
@@ -53,8 +54,8 @@ export function HeaderNav({ activeTab, onTabChange, onOpenManageTeam }: HeaderNa
             </span>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="flex items-center gap-4 sm:gap-6 text-xs font-medium">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-4 sm:gap-6 text-xs font-medium">
             <button
               onClick={() => onTabChange('dashboard')}
               className={`transition-colors py-1 cursor-pointer ${
@@ -102,15 +103,16 @@ export function HeaderNav({ activeTab, onTabChange, onOpenManageTeam }: HeaderNa
               Kelola Tim
             </button>
 
-            {/* User Profile Badge & Logout */}
+            {/* User Profile Badge, ThemeToggle & Logout */}
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-zinc-800">
+              <ThemeToggle variant="header" />
               <div className="flex items-center gap-2">
                 <Avatar className="size-8 ring-2 ring-[#00A2E9]/30 shadow-xs">
                   <AvatarFallback className="bg-gradient-to-br from-[#005596] to-[#00A2E9] text-white text-xs font-bold">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden md:block text-left">
+                <div className="hidden lg:block text-left">
                   <p className="text-xs font-bold text-slate-800 dark:text-zinc-200 leading-tight">
                     {userName}
                   </p>
@@ -131,6 +133,84 @@ export function HeaderNav({ activeTab, onTabChange, onOpenManageTeam }: HeaderNa
               </button>
             </div>
           </nav>
+
+          {/* Mobile Right Actions: Theme Toggle + User Avatar + Logout */}
+          <div className="flex md:hidden items-center gap-2">
+            <ThemeToggle variant="header" />
+            <Avatar className="size-7 ring-2 ring-[#00A2E9]/30 shadow-xs">
+              <AvatarFallback className="bg-gradient-to-br from-[#005596] to-[#00A2E9] text-white text-[10px] font-bold">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              title="Keluar / Logout"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition-colors cursor-pointer"
+            >
+              <LogOut className="size-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Sub-bar (Segmented Pill Control for iPhone X / Mobile Screen) */}
+        <div className="md:hidden pb-2.5 pt-0.5 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 min-w-max px-0.5">
+            <button
+              type="button"
+              onClick={() => onTabChange('dashboard')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'dashboard'
+                  ? 'bg-[#005596] text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 hover:bg-slate-200'
+              }`}
+            >
+              <LayoutDashboard className="size-3.5" />
+              <span>Dashboard</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onTabChange('upcoming')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'upcoming'
+                  ? 'bg-[#005596] text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 hover:bg-slate-200'
+              }`}
+            >
+              <CalendarDays className="size-3.5" />
+              <span>Jadwal Shift</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onTabChange('assigned')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'assigned'
+                  ? 'bg-[#005596] text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 hover:bg-slate-200'
+              }`}
+            >
+              <Trophy className="size-3.5" />
+              <span>Peringkat & Antrean</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenManageTeam) onOpenManageTeam();
+                else onTabChange('settings');
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'settings'
+                  ? 'bg-[#005596] text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 hover:bg-slate-200'
+              }`}
+            >
+              <Users className="size-3.5" />
+              <span>Kelola Tim</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>

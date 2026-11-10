@@ -63,6 +63,18 @@ export function TeamContributionHeatmap({
   const [selectedMemberId, setSelectedMemberId] = React.useState<string>('all');
   const [selectedCategory, setSelectedCategory] = React.useState<'all' | TaskCategory>('all');
   const [hoveredCell, setHoveredCell] = React.useState<DayCell | null>(null);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to active month (November 2026) on mobile devices
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768 && scrollContainerRef.current) {
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({ left: 560, behavior: 'smooth' });
+        }
+      }, 300);
+    }
+  }, []);
 
   // Group real events from database by date
   const eventsByDate = React.useMemo(() => {
@@ -391,8 +403,27 @@ export function TeamContributionHeatmap({
         </div>
       </div>
 
+      {/* Mobile Hint & Quick Focus to Active Month */}
+      <div className="md:hidden flex items-center justify-between gap-2 pt-2.5 text-[11px] text-[#64748B] dark:text-zinc-400">
+        <span className="flex items-center gap-1 font-medium">
+          <span>👉</span>
+          <span>Geser untuk bulan lain</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            if (scrollContainerRef.current) {
+              scrollContainerRef.current.scrollTo({ left: 560, behavior: 'smooth' });
+            }
+          }}
+          className="px-2.5 py-1 rounded-lg bg-[#E0F2FE] dark:bg-zinc-800 text-[#005596] dark:text-[#38BDF8] font-bold text-[10px] cursor-pointer hover:bg-[#005596] hover:text-white transition-all shadow-2xs active:scale-95"
+        >
+          📍 Fokus Nov 2026
+        </button>
+      </div>
+
       {/* Contribution Calendar Grid */}
-      <div className="pt-4 overflow-x-auto select-none">
+      <div ref={scrollContainerRef} className="pt-3 overflow-x-auto select-none no-scrollbar">
         <div className="min-w-[780px]">
           {/* Month Labels Bar */}
           <div className="flex text-[10px] text-[#64748B] dark:text-zinc-400 font-semibold pl-8 mb-1.5">

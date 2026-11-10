@@ -43,104 +43,111 @@ export function StatCardsRow({ metrics, memberCount }: StatCardsRowProps) {
   const fairness = getFairnessDetail(metrics.maxDiffHours);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
       {/* Card 1: Total Jam Lembur */}
-      <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] p-5 shadow-2xs hover:border-[#00A2E9]/50 transition-all">
-        <div className="flex items-start justify-between">
-          <span className="text-xs font-semibold text-[#64748B] dark:text-zinc-400">Total Akumulasi Lembur</span>
-          <div className="size-7 rounded-lg bg-[#E0F2FE] dark:bg-zinc-800 flex items-center justify-center text-[#005596] dark:text-[#38BDF8]">
-            <DollarSign className="size-3.5 stroke-[2]" />
+      <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] p-3.5 sm:p-5 shadow-2xs hover:border-[#00A2E9]/50 transition-all flex flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-semibold text-[#64748B] dark:text-zinc-400 line-clamp-1">Total Jam Lembur</span>
+            <div className="size-6 sm:size-7 rounded-lg bg-[#E0F2FE] dark:bg-zinc-800 flex items-center justify-center text-[#005596] dark:text-[#38BDF8] shrink-0">
+              <DollarSign className="size-3 sm:size-3.5 stroke-[2]" />
+            </div>
+          </div>
+          <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#005596] dark:text-[#38BDF8] tracking-tight">
+            {metrics.totalDistributedHours} Jam
           </div>
         </div>
-        <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#005596] dark:text-[#38BDF8] tracking-tight">
-          {metrics.totalDistributedHours} Jam
-        </div>
-        <div className="mt-2 text-[11px] font-medium text-[#64748B] dark:text-zinc-400 flex items-center gap-1.5 truncate">
+        <div className="mt-2 text-[10px] sm:text-[11px] font-medium text-[#64748B] dark:text-zinc-400 flex items-center gap-1.5 truncate">
           <span className="size-1.5 rounded-full bg-[#00A2E9] shrink-0" />
           <span className="truncate">
             {metrics.totalDistributedHours === 0
-              ? 'Belum ada jam lembur terakumulasi'
-              : `${metrics.totalDistributedHours} jam terdistribusi ke seluruh tim`}
+              ? 'Belum ada jam lembur'
+              : `${metrics.totalDistributedHours} jam terdistribusi`}
           </span>
         </div>
       </div>
 
       {/* Card 2: Pemerataan Beban Tim (Indikator Keadilan Rotasi) */}
-      <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] p-5 shadow-2xs hover:border-[#00A2E9]/50 transition-all">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-[#64748B] dark:text-zinc-400">Pemerataan Beban Tim</span>
-            <div className="group relative">
-              <Info className="size-3.5 text-slate-400 hover:text-[#00A2E9] cursor-pointer" />
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-40 w-64 p-2.5 rounded-xl bg-slate-900 text-white text-[11px] leading-relaxed shadow-2xl border border-slate-700 animate-in fade-in duration-150">
-                <p className="font-bold mb-1 text-[#38BDF8]">Indikator Keadilan Beban Kerja:</p>
-                <p>
-                  Mengukur gap (selisih) antara teknisi dengan jam terbanyak (
-                  {metrics.maxHours ?? metrics.maxDiffHours}j) dan tersedikit ({metrics.minHours ?? 0}j).
-                  Sistem menjaga selisih ini sekecil mungkin agar giliran tugas adil dan tidak membebani teknisi tertentu.
-                </p>
+      <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] p-3.5 sm:p-5 shadow-2xs hover:border-[#00A2E9]/50 transition-all flex flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-1">
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] sm:text-xs font-semibold text-[#64748B] dark:text-zinc-400 line-clamp-1">Pemerataan Beban</span>
+              <div className="group relative">
+                <Info className="size-3 text-slate-400 hover:text-[#00A2E9] cursor-pointer" />
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-40 w-56 sm:w-64 p-2.5 rounded-xl bg-slate-900 text-white text-[10px] sm:text-[11px] leading-relaxed shadow-2xl border border-slate-700 animate-in fade-in duration-150">
+                  <p className="font-bold mb-1 text-[#38BDF8]">Indikator Keadilan Beban Kerja:</p>
+                  <p>
+                    Mengukur gap (selisih) antara teknisi dengan jam terbanyak (
+                    {metrics.maxHours ?? metrics.maxDiffHours}j) dan tersedikit ({metrics.minHours ?? 0}j).
+                  </p>
+                </div>
               </div>
             </div>
+            <div className="size-6 sm:size-7 rounded-lg bg-[#F0F9FF] dark:bg-zinc-800 flex items-center justify-center text-[#00A2E9] dark:text-[#38BDF8] shrink-0">
+              <Scale className="size-3 sm:size-3.5 stroke-[2]" />
+            </div>
           </div>
-          <div className="size-7 rounded-lg bg-[#F0F9FF] dark:bg-zinc-800 flex items-center justify-center text-[#00A2E9] dark:text-[#38BDF8]">
-            <Scale className="size-3.5 stroke-[2]" />
-          </div>
-        </div>
 
-        {/* Big Number & Gap Context */}
-        <div className="mt-2 flex items-baseline gap-2 flex-wrap">
-          <span className="text-2xl sm:text-3xl font-extrabold text-[#0A2540] dark:text-white tracking-tight">
-            Δ {metrics.maxDiffHours} Jam
-          </span>
-          <span className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500">
-            (Gap Max vs Min)
-          </span>
+          {/* Big Number & Gap Context */}
+          <div className="mt-1.5 sm:mt-2 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#0A2540] dark:text-white tracking-tight">
+              Δ {metrics.maxDiffHours} Jam
+            </span>
+            <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400 dark:text-zinc-500">
+              (Gap)
+            </span>
+          </div>
         </div>
 
         {/* Clear Explanatory Footnote */}
-        <div className="mt-2 text-[11px] font-medium flex items-center gap-1.5 flex-wrap">
-          <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] border shrink-0 ${fairness.badgeClass}`}>
+        <div className="mt-2 text-[10px] sm:text-[11px] font-medium flex items-center gap-1 flex-wrap">
+          <span className={`px-1.5 py-0.5 rounded-full font-bold text-[9px] sm:text-[10px] border shrink-0 ${fairness.badgeClass}`}>
             {fairness.badge}
           </span>
-          <span className="text-slate-500 dark:text-zinc-400 text-[10.5px] truncate" title={fairness.explanation}>
+          <span className="text-slate-500 dark:text-zinc-400 text-[10px] truncate hidden sm:inline" title={fairness.explanation}>
             • {fairness.explanation}
           </span>
         </div>
       </div>
 
       {/* Card 3: Total Sesi Kegiatan */}
-      <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] p-5 shadow-2xs hover:border-[#00A2E9]/50 transition-all">
-        <div className="flex items-start justify-between">
-          <span className="text-xs font-semibold text-[#64748B] dark:text-zinc-400">Total Sesi Kegiatan / Shift</span>
-          <div className="size-7 rounded-lg bg-[#E0F2FE] dark:bg-zinc-800 flex items-center justify-center text-[#00B4D8]">
-            <Calendar className="size-3.5 stroke-[2]" />
+      <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] p-3.5 sm:p-5 shadow-2xs hover:border-[#00A2E9]/50 transition-all flex flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-semibold text-[#64748B] dark:text-zinc-400 line-clamp-1">Total Sesi Shift</span>
+            <div className="size-6 sm:size-7 rounded-lg bg-[#E0F2FE] dark:bg-zinc-800 flex items-center justify-center text-[#00B4D8] shrink-0">
+              <Calendar className="size-3 sm:size-3.5 stroke-[2]" />
+            </div>
+          </div>
+          <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#005596] dark:text-[#38BDF8] tracking-tight">
+            {metrics.totalEvents} Sesi
           </div>
         </div>
-        <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#005596] dark:text-[#38BDF8] tracking-tight">
-          {metrics.totalEvents} Sesi
-        </div>
-        <div className="mt-2 text-[11px] font-medium text-[#64748B] dark:text-zinc-400 flex items-center gap-1.5 truncate">
+        <div className="mt-2 text-[10px] sm:text-[11px] font-medium text-[#64748B] dark:text-zinc-400 flex items-center gap-1.5 truncate">
           <span className="size-1.5 rounded-full bg-[#00B4D8] shrink-0" />
-          <span className="truncate">Seluruh agenda kegiatan tersimpan di sistem</span>
+          <span className="truncate">Sesi agenda tersimpan</span>
         </div>
       </div>
 
       {/* Card 4: Total Personil Teknisi */}
-      <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] p-5 shadow-2xs hover:border-[#00A2E9]/50 transition-all">
-        <div className="flex items-start justify-between">
-          <span className="text-xs font-semibold text-[#64748B] dark:text-zinc-400">Total Personil Teknisi</span>
-          <div className="size-7 rounded-lg bg-[#FEF3C7] dark:bg-zinc-800 flex items-center justify-center text-[#B45309] dark:text-amber-400">
-            <Users className="size-3.5 stroke-[2]" />
+      <div className="rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] p-3.5 sm:p-5 shadow-2xs hover:border-[#00A2E9]/50 transition-all flex flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-semibold text-[#64748B] dark:text-zinc-400 line-clamp-1">Personil Tim</span>
+            <div className="size-6 sm:size-7 rounded-lg bg-[#FEF3C7] dark:bg-zinc-800 flex items-center justify-center text-[#B45309] dark:text-amber-400 shrink-0">
+              <Users className="size-3 sm:size-3.5 stroke-[2]" />
+            </div>
+          </div>
+          <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#0A2540] dark:text-white tracking-tight">
+            {memberCount} Orang
           </div>
         </div>
-        <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#0A2540] dark:text-white tracking-tight">
-          {memberCount} Orang
-        </div>
-        <div className="mt-2 text-[11px] font-semibold text-[#005596] dark:text-[#38BDF8] flex items-center gap-1.5">
-          <span className="px-2 py-0.5 rounded-full bg-[#FFD100]/25 text-[#0A2540] dark:text-amber-300 font-extrabold text-[10px] border border-[#FFD100]">
-            Divisi Multimedia
+        <div className="mt-2 text-[10px] sm:text-[11px] font-semibold text-[#005596] dark:text-[#38BDF8] flex items-center gap-1.5">
+          <span className="px-1.5 py-0.5 rounded-full bg-[#FFD100]/25 text-[#0A2540] dark:text-amber-300 font-extrabold text-[9px] sm:text-[10px] border border-[#FFD100]">
+            Multimedia
           </span>
-          <span className="text-slate-400 dark:text-zinc-500 font-normal">PLN Icon Plus</span>
+          <span className="text-slate-400 dark:text-zinc-500 font-normal truncate">Icon+</span>
         </div>
       </div>
     </div>

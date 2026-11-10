@@ -265,9 +265,9 @@ export function UpcomingListView({
   return (
     <div className="rounded-2xl border border-gray-200/80 dark:border-[#1F1F1F] bg-white dark:bg-[#0A0A0A] p-5 sm:p-6 shadow-xs transition-colors">
       {/* Top Header & Toolbar matching Gambar 1 */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4">
         {/* Left: Search Bar */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 w-full sm:max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 dark:text-zinc-500" />
           <input
             type="text"
@@ -462,8 +462,8 @@ export function UpcomingListView({
         </div>
       )}
 
-      {/* Modern Data Table matching Gambar 1 */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-zinc-800">
+      {/* Modern Data Table (Desktop >= md) */}
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 dark:border-zinc-800">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-slate-200 dark:border-zinc-800 bg-[#F8FAFC] dark:bg-black text-slate-500 dark:text-zinc-400 font-bold">
@@ -777,6 +777,180 @@ export function UpcomingListView({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Dynamic Card List (< md) */}
+      <div className="md:hidden space-y-3">
+        {currentEvents.length === 0 ? (
+          <div className="py-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 p-6 bg-slate-50/50 dark:bg-zinc-900/30">
+            <Calendar className="size-8 mx-auto text-slate-300 dark:text-zinc-600 mb-2" />
+            <p className="font-semibold text-xs text-slate-600 dark:text-zinc-300">
+              Tidak ada jadwal yang sesuai kriteria pencarian.
+            </p>
+            <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-0.5">
+              Coba ganti kata kunci atau reset filter status.
+            </p>
+          </div>
+        ) : (
+          currentEvents.map((evt, idx) => {
+            const code = getEventCode(evt, startIndex + idx);
+            const past = isPastDate(evt.date);
+            const isSupport = evt.taskCategory === 'Tugas Support';
+
+            return (
+              <div
+                key={evt.id}
+                className="rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-[#0E0E0E] p-4 shadow-2xs space-y-3 transition-all hover:border-[#00A2E9]/50"
+              >
+                {/* Header: Code + Category Pill + Status Badge */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-black text-xs text-[#005596] dark:text-[#38BDF8] bg-[#E0F2FE]/70 dark:bg-zinc-800 px-2.5 py-0.5 rounded-lg tracking-tight">
+                      {code}
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        isSupport
+                          ? 'bg-[#00A2E9]/10 text-[#00A2E9] dark:text-[#38BDF8] border border-[#00A2E9]/25'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200/60 dark:border-zinc-700'
+                      }`}
+                    >
+                      {evt.taskCategory || 'Tugas Pokok'}
+                    </span>
+                  </div>
+                  <div>{renderStatusBadge(evt.status, evt)}</div>
+                </div>
+
+                {/* Title & Room */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDetailEvent({ ...evt, status: getEffectiveEventStatus(evt) })}
+                    className="font-bold text-sm text-[#0A2540] dark:text-white hover:text-[#00A2E9] dark:hover:text-[#38BDF8] transition-colors text-left leading-snug cursor-pointer line-clamp-2"
+                  >
+                    {evt.title}
+                  </button>
+
+                  {evt.room && (
+                    <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[#005596] dark:text-[#38BDF8] bg-[#E0F2FE]/60 dark:bg-zinc-800 px-2 py-0.5 rounded-md border border-[#00A2E9]/20">
+                      <MapPin className="size-3 shrink-0" />
+                      <span className="truncate">{evt.room}</span>
+                    </div>
+                  )}
+
+                  {evt.agenda && (
+                    <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
+                      {evt.agenda}
+                    </p>
+                  )}
+                </div>
+
+                {/* Date & Time Row */}
+                <div className="flex flex-wrap items-center gap-3 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="size-3.5 text-slate-400" />
+                    <span className={`font-semibold ${past ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-zinc-300'}`}>
+                      {formatEventDate(evt.date)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-zinc-400">
+                    <Clock className="size-3.5" />
+                    <span>{evt.time || '17:00 - 21:00'}</span>
+                    <span className="font-bold text-[#005596] dark:text-[#38BDF8]">({evt.durationHours || 4} Jam)</span>
+                  </div>
+                </div>
+
+                {/* Assigned Technicians */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Teknisi Bertugas ({evt.assignedMemberNames?.length || 0}):
+                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {evt.assignedMemberNames?.length ? (
+                      evt.assignedMemberNames.map((name, i) => {
+                        const memberRoles: string[] = [];
+                        if (evt.technicianRoles) {
+                          if (evt.technicianRoles.vjUtama === name) memberRoles.push('VJ Utama');
+                          if (evt.technicianRoles.coVjZoom === name) memberRoles.push('Co-VJ');
+                          if (evt.technicianRoles.kameramen === name) memberRoles.push('Kamera');
+                          if (evt.technicianRoles.switcherPtz === name) memberRoles.push('Switcher/PTZ');
+                          if (evt.technicianRoles.operatorPresentasi === name) memberRoles.push('Presentasi');
+                        }
+
+                        return (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#E0F2FE]/70 dark:bg-zinc-800 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/25 text-[11px] font-medium"
+                          >
+                            <UserCheck className="size-3 text-[#00A2E9]" />
+                            <span>{name}</span>
+                            {memberRoles.length > 0 && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-[#005596]/15 dark:bg-[#38BDF8]/20 font-bold text-[#005596] dark:text-[#38BDF8]">
+                                {memberRoles[0]}
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-slate-400 italic text-[11px]">Belum ditentukan</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* PDF Link if exists */}
+                {evt.pdfFileKey && (
+                  <div className="pt-1">
+                    <a
+                      href={`/api/agenda/pdf?key=${encodeURIComponent(evt.pdfFileKey)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#E0F2FE] dark:bg-zinc-900 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/30 text-[11px] font-bold hover:bg-[#005596] hover:text-white transition-colors"
+                    >
+                      <FileText className="size-3.5 text-[#00A2E9]" />
+                      <span className="truncate">{evt.pdfFileName || 'Dokumen PDF Agenda'}</span>
+                    </a>
+                  </div>
+                )}
+
+                {/* Bottom Actions Bar */}
+                <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDetailEvent({ ...evt, status: getEffectiveEventStatus(evt) })}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E0F2FE]/80 dark:bg-zinc-800 text-[#005596] dark:text-[#38BDF8] text-xs font-bold hover:bg-[#005596] hover:text-white transition-all cursor-pointer shadow-2xs"
+                  >
+                    <Eye className="size-3.5" />
+                    <span>Lihat Detail</span>
+                  </button>
+
+                  <div className="flex items-center gap-1.5">
+                    {onEditSchedule && (
+                      <button
+                        type="button"
+                        onClick={() => onEditSchedule(evt)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-black text-slate-700 dark:text-zinc-200 text-xs font-semibold hover:border-[#00A2E9] transition-all cursor-pointer shadow-2xs"
+                        title="Edit Jadwal"
+                      >
+                        <Pencil className="size-3.5 text-slate-500" />
+                        <span>Edit</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteEvent(evt)}
+                      className="p-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
+                      title="Hapus Jadwal"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Delete Confirmation Modal / Backdrop */}

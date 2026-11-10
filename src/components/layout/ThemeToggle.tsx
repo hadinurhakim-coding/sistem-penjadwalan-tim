@@ -3,7 +3,12 @@
 import * as React from 'react';
 import { Sun, Moon } from 'lucide-react';
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  variant?: 'floating' | 'header';
+  className?: string;
+}
+
+export function ThemeToggle({ variant = 'floating', className = '' }: ThemeToggleProps) {
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = React.useState(false);
   const [isMorphing, setIsMorphing] = React.useState(false);
@@ -45,8 +50,15 @@ export function ThemeToggle() {
   };
 
   if (!mounted) {
+    if (variant === 'header') {
+      return (
+        <div className={`p-2 rounded-xl opacity-0 pointer-events-none ${className}`}>
+          <div className="size-4" />
+        </div>
+      );
+    }
     return (
-      <div className="fixed bottom-5 left-5 z-50">
+      <div className="hidden md:block fixed bottom-5 left-5 z-50">
         <div className="h-11 w-11 rounded-full bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-[#222222] shadow-md opacity-0 pointer-events-none" />
       </div>
     );
@@ -54,8 +66,26 @@ export function ThemeToggle() {
 
   const isDark = theme === 'dark';
 
+  if (variant === 'header') {
+    return (
+      <button
+        type="button"
+        onClick={toggleTheme}
+        aria-label="Toggle dark mode"
+        className={`p-2 rounded-xl text-slate-500 hover:text-[#00A2E9] hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-[#38BDF8] dark:hover:bg-zinc-800 transition-colors cursor-pointer ${className}`}
+        title={isDark ? 'Mode Gelap Aktif (Klik untuk Mode Terang)' : 'Mode Terang Aktif (Klik untuk Mode Gelap)'}
+      >
+        {isDark ? (
+          <Moon className="size-4 text-[#38BDF8] fill-[#38BDF8]/20" />
+        ) : (
+          <Sun className="size-4 text-[#FFD100] stroke-[2.2]" />
+        )}
+      </button>
+    );
+  }
+
   return (
-    <div className="fixed bottom-5 left-5 z-50">
+    <div className="hidden md:block fixed bottom-5 left-5 z-50">
       <button
         type="button"
         onClick={toggleTheme}
@@ -66,7 +96,7 @@ export function ThemeToggle() {
           isDark
             ? 'bg-[#0D0D0D] border-[#262626] text-white shadow-black/80 hover:border-[#38BDF8]/40'
             : 'bg-white border-slate-200/90 text-[#0A2540] shadow-slate-200/60 hover:border-[#00A2E9]/40'
-        }`}
+        } ${className}`}
         title={isDark ? 'Mode Gelap Aktif (Klik untuk beralih ke Mode Terang)' : 'Mode Terang Aktif (Klik untuk beralih ke Mode Gelap)'}
       >
         {/* Animated Moon / Sun Icon with Smooth Slow Rotation */}
