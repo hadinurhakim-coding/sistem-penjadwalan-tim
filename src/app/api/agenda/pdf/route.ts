@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPresignedPdfUrl, isStorageConfigured } from '@/lib/storage';
 
-
-
-
-
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

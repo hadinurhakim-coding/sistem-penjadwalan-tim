@@ -73,6 +73,7 @@ export function AddScheduleModal({
   const [isAddingNewTaskType, setIsAddingNewTaskType] = React.useState(false);
   const [newTaskTypeName, setNewTaskTypeName] = React.useState('');
   const [newTaskTypeCategory, setNewTaskTypeCategory] = React.useState<TaskCategory>('Tugas Pokok');
+  const [deletingTaskTypeId, setDeletingTaskTypeId] = React.useState<string | null>(null);
 
   // 2. Judul Acara / Kegiatan
   const [scheduleTitle, setScheduleTitle] = React.useState('');
@@ -101,6 +102,7 @@ export function AddScheduleModal({
   const [editingRoomName, setEditingRoomName] = React.useState('');
   const [isAddingNewRoom, setIsAddingNewRoom] = React.useState(false);
   const [newRoomName, setNewRoomName] = React.useState('');
+  const [deletingRoomId, setDeletingRoomId] = React.useState<string | null>(null);
   const roomDropdownRef = React.useRef<HTMLDivElement>(null);
 
   // 3. Tanggal
@@ -374,21 +376,31 @@ export function AddScheduleModal({
   };
 
   // Delete room from database
-  const handleDeleteRoom = async (id: string) => {
+  const handleDeleteRoom = async (e: React.MouseEvent, room: Room) => {
+    e.stopPropagation();
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus ruangan "${room.name}" dari database?`)) {
+      return;
+    }
     try {
-      const res = await fetch(`/api/rooms?id=${id}`, {
+      setDeletingRoomId(room.id);
+      const res = await fetch(`/api/rooms?id=${encodeURIComponent(room.id)}`, {
         method: 'DELETE',
       });
       const json = await res.json();
-      if (json.success && json.rooms) {
+      if (json.success && Array.isArray(json.rooms)) {
         setRooms(json.rooms);
-        if (selectedRoomId === id) {
+        if (selectedRoomId === room.id) {
           setSelectedRoomId(null);
           setSelectedRoomName('');
         }
+      } else {
+        alert(json.error || 'Gagal menghapus ruangan');
       }
     } catch (e) {
       console.error('Error deleting room:', e);
+      alert('Terjadi kesalahan koneksi saat menghapus ruangan.');
+    } finally {
+      setDeletingRoomId(null);
     }
   };
 
@@ -465,20 +477,30 @@ export function AddScheduleModal({
   // Delete task type from Database table
   const handleDeleteTaskTypeFromDB = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    const target = taskTypes.find((t) => t.id === id);
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus jenis tugas "${target?.name || ''}" dari database?`)) {
+      return;
+    }
     try {
+      setDeletingTaskTypeId(id);
       const res = await fetch(`/api/task-types?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
       const json = await res.json();
-      if (json.success && json.taskTypes) {
+      if (json.success && Array.isArray(json.taskTypes)) {
         setTaskTypes(json.taskTypes);
         if (selectedTaskTypeId === id) {
           setSelectedTaskTypeId(null);
           setScheduleTitle('');
         }
+      } else if (!json.success) {
+        alert(json.error || 'Gagal menghapus jenis tugas');
       }
     } catch (err) {
       console.error(err);
+      alert('Terjadi kesalahan koneksi saat menghapus jenis tugas.');
+    } finally {
+      setDeletingTaskTypeId(null);
     }
   };
 
@@ -805,11 +827,16 @@ export function AddScheduleModal({
                           {/* Delete Button */}
                           <button
                             type="button"
+                            disabled={deletingTaskTypeId === item.id}
                             onClick={(e) => handleDeleteTaskTypeFromDB(e, item.id)}
-                            className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
                             title="Hapus dari Database"
                           >
-                            <Trash2 className="size-3" />
+                            {deletingTaskTypeId === item.id ? (
+                              <Loader2 className="size-3 animate-spin text-red-500" />
+                            ) : (
+                              <Trash2 className="size-3" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1047,14 +1074,16 @@ export function AddScheduleModal({
                             </button>
                             <button
                               type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteRoom(room.id);
-                              }}
-                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-                              title="Hapus ruangan"
+                              disabled={deletingRoomId === room.id}
+                              onClick={(e) => handleDeleteRoom(e, room)}
+                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Hapus ruangan dari database"
                             >
-                              <Trash2 className="size-3" />
+                              {deletingRoomId === room.id ? (
+                                <Loader2 className="size-3 animate-spin text-red-500" />
+                              ) : (
+                                <Trash2 className="size-3" />
+                              )}
                             </button>
                           </div>
                         )}

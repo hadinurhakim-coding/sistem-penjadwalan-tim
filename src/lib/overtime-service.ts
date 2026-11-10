@@ -101,6 +101,18 @@ export async function getOvertimeStore(): Promise<OvertimeStore> {
         await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS room VARCHAR(255)`;
         await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS task_type VARCHAR(255)`;
         await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS technician_roles JSONB DEFAULT '{}'::jsonb`;
+
+        // Inisialisasi awal default rooms ke dalam database Neon Postgres jika tabel masih kosong
+        const roomCountRes = await sql`SELECT count(*)::int as cnt FROM rooms`.catch(() => [{ cnt: 1 }]);
+        if (roomCountRes[0]?.cnt === 0) {
+          for (const dr of DEFAULT_ROOMS) {
+            await sql`
+              INSERT INTO rooms (id, name, created_at, updated_at)
+              VALUES (${dr.id}, ${dr.name}, NOW(), NOW())
+              ON CONFLICT (id) DO NOTHING
+            `.catch(() => {});
+          }
+        }
       } catch {}
 
       const [membersRows, eventsRows, taskTypesRows, roomsRows] = await Promise.all([
@@ -131,7 +143,7 @@ export async function getOvertimeStore(): Promise<OvertimeStore> {
         updatedAt: r.updated_at || undefined,
       }));
 
-      const rooms: Room[] = Array.isArray(roomsRows) && roomsRows.length > 0
+      const rooms: Room[] = Array.isArray(roomsRows)
         ? roomsRows.map((r: any) => ({
             id: String(r.id),
             name: r.name,
@@ -823,7 +835,7 @@ export async function deleteTaskType(id: string): Promise<void> {
 
 export async function getRooms(): Promise<Room[]> {
   const store = await getOvertimeStore();
-  return Array.isArray(store.rooms) && store.rooms.length > 0 ? store.rooms : [...DEFAULT_ROOMS];
+  return Array.isArray(store.rooms) ? store.rooms : [...DEFAULT_ROOMS];
 }
 
 export async function addRoom(name: string): Promise<Room> {
