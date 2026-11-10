@@ -150,13 +150,17 @@ export function TeamContributionHeatmap({
           .filter((ev) => ev.category === 'Tugas Support')
           .reduce((acc, ev) => acc + ev.hours, 0);
 
-        // Determine contribution dot level:
-        // 0: 0 hrs, 1: 1-3 hrs, 2: 4 hrs (1 shift), 3: 5-7 hrs, 4: >= 8 hrs
+        // Skala intensitas warna dot heatmap (bergradasi proporsional):
+        // Level 0: 0 agenda / 0 jam (Kosong)
+        // Level 1: 1 agenda (1 - 4 jam / 1 sesi) -> Biru Muda Halus (#BAE6FD)
+        // Level 2: 2 agenda (5 - 8 jam / 2 sesi) -> Biru Cyan Sedang (#38BDF8)
+        // Level 3: 3 agenda (9 - 12 jam / 3 sesi) -> Biru Cyan Primary (#00A2E9)
+        // Level 4: ≥ 4 agenda (≥ 13 jam / 4+ sesi sangat padat) -> Biru Pekat (#005596)
         let level: 0 | 1 | 2 | 3 | 4 = 0;
-        if (dayTotalHours >= 8) level = 4;
-        else if (dayTotalHours >= 5) level = 3;
-        else if (dayTotalHours >= 4) level = 2;
-        else if (dayTotalHours > 0) level = 1;
+        if (filteredEvents.length >= 4 || dayTotalHours >= 13) level = 4;
+        else if (filteredEvents.length === 3 || dayTotalHours >= 9) level = 3;
+        else if (filteredEvents.length === 2 || dayTotalHours >= 5) level = 2;
+        else if (filteredEvents.length >= 1 || dayTotalHours > 0) level = 1;
 
         if (filteredEvents.length > 0) {
           totalCont += filteredEvents.length;
@@ -447,8 +451,8 @@ export function TeamContributionHeatmap({
                     )}`}
                     title={`${cell.formattedIndoDate}: ${
                       cell.totalHours > 0
-                        ? `${cell.sessionCount} Sesi (${cell.totalHours} Jam)`
-                        : 'Tidak ada penugasan'
+                        ? `${cell.sessionCount} Agenda (${cell.totalHours} Jam)`
+                        : 'Tidak ada agenda kegiatan'
                     }`}
                   />
                 ))
@@ -466,11 +470,11 @@ export function TeamContributionHeatmap({
             {/* GitHub-style Legend with PLN Icon Plus Palette */}
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-medium text-[#64748B] dark:text-zinc-400">Kurang</span>
-              <div className="w-3 h-3 rounded-[2px] bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700" title="0 Jam" />
-              <div className="w-3 h-3 rounded-[2px] bg-[#BAE6FD]" title="1 - 3 Jam" />
-              <div className="w-3 h-3 rounded-[2px] bg-[#38BDF8]" title="4 Jam (1 Sesi Standar)" />
-              <div className="w-3 h-3 rounded-[2px] bg-[#00A2E9]" title="5 - 7 Jam" />
-              <div className="w-3 h-3 rounded-[2px] bg-[#005596]" title="≥ 8 Jam" />
+              <div className="w-3 h-3 rounded-[2px] bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700" title="0 Agenda (0 Jam)" />
+              <div className="w-3 h-3 rounded-[2px] bg-[#BAE6FD]" title="1 Agenda (1 - 4 Jam)" />
+              <div className="w-3 h-3 rounded-[2px] bg-[#38BDF8]" title="2 Agenda (5 - 8 Jam)" />
+              <div className="w-3 h-3 rounded-[2px] bg-[#00A2E9]" title="3 Agenda (9 - 12 Jam)" />
+              <div className="w-3 h-3 rounded-[2px] bg-[#005596]" title="≥ 4 Agenda (≥ 13 Jam - Sangat Padat)" />
               <span className="text-[10px] font-medium text-[#64748B] dark:text-zinc-400">Banyak</span>
             </div>
           </div>
