@@ -345,29 +345,67 @@ export function MonthlyCalendarView({
               </div>
 
               {/* Desktop Event Pills (>= sm) */}
-              <div className="hidden sm:block mt-1 space-y-1 flex-1">
-                {dayEvents.map((evt) => (
-                  <div
-                    key={evt.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedAgendaDate(cell.dateString);
-                    }}
-                    className="border-l-[3.5px] border-[#00A2E9] bg-[#F0F9FF] dark:bg-zinc-900 hover:bg-[#E0F2FE] dark:hover:bg-zinc-800 text-left px-2 py-1 rounded-r transition-all cursor-pointer shadow-2xs"
-                  >
-                    <div className="text-[11px] font-bold text-[#0A2540] dark:text-white leading-tight truncate">
-                      {evt.title}
-                    </div>
-                    <div className="text-[10px] text-[#005596] dark:text-[#38BDF8] font-semibold leading-tight truncate mt-0.5">
-                      {evt.time || '17:00 - 21:00'}
-                    </div>
-                    {evt.assignedMemberNames && evt.assignedMemberNames.length > 0 && (
-                      <div className="text-[9.5px] text-[#005596] dark:text-[#38BDF8] font-medium truncate mt-0.5">
-                        👤 {evt.assignedMemberNames.join(', ')}
+              <div className="hidden sm:block mt-1 flex-1">
+                {dayEvents.length <= 3 ? (
+                  /* Tampilan normal jika 1 s/d 3 agenda */
+                  <div className="space-y-1">
+                    {dayEvents.map((evt) => (
+                      <div
+                        key={evt.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedAgendaDate(cell.dateString);
+                        }}
+                        className="border-l-[3.5px] border-[#00A2E9] bg-[#F0F9FF] dark:bg-zinc-900 hover:bg-[#E0F2FE] dark:hover:bg-zinc-800 text-left px-2 py-1 rounded-r transition-all cursor-pointer shadow-2xs"
+                      >
+                        <div className="text-[11px] font-bold text-[#0A2540] dark:text-white leading-tight truncate">
+                          {evt.title}
+                        </div>
+                        <div className="text-[10px] text-[#005596] dark:text-[#38BDF8] font-semibold leading-tight truncate mt-0.5">
+                          {evt.time || '17:00 - 21:00'}
+                        </div>
+                        {evt.assignedMemberNames && evt.assignedMemberNames.length > 0 && (
+                          <div className="text-[9.5px] text-[#005596] dark:text-[#38BDF8] font-medium truncate mt-0.5">
+                            👤 {evt.assignedMemberNames.join(', ')}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  /* Komponen Bulatan Bernomor jika lebih dari 3 agenda (contoh 4 agenda: bulatan 1, 2, 3, 4) */
+                  <div className="flex flex-col justify-between h-full pt-0.5">
+                    <div className="flex flex-wrap items-center gap-1.5 p-1">
+                      {dayEvents.map((evt, idx) => {
+                        const isSupport = evt.taskCategory === 'Tugas Support';
+                        return (
+                          <button
+                            key={evt.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActivePopoverEvent(evt);
+                            }}
+                            title={`Agenda #${idx + 1}: ${evt.title} (${evt.time || '17:00 - 21:00'})${
+                              evt.assignedMemberNames?.length ? ` - ${evt.assignedMemberNames.join(', ')}` : ''
+                            }`}
+                            className={`size-6 sm:size-7 rounded-full flex items-center justify-center font-extrabold text-[11px] transition-all cursor-pointer shadow-2xs hover:scale-115 hover:ring-2 hover:ring-[#FFD100] active:scale-95 ${
+                              isSupport
+                                ? 'bg-[#00A2E9] text-white hover:bg-[#0087C2]'
+                                : 'bg-[#005596] text-white hover:bg-[#003E6E]'
+                            }`}
+                          >
+                            {idx + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-1 pt-1 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-[#005596] dark:text-[#38BDF8] font-bold flex items-center justify-between px-1">
+                      <span>{dayEvents.length} Agenda</span>
+                      <span className="text-[9px] text-slate-400 dark:text-zinc-500 font-normal">Klik no.</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -493,24 +531,32 @@ export function MonthlyCalendarView({
 
       {/* Floating Detailed Popover matching frame_45s.jpg */}
       {activePopoverEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-2xs">
-          <div className="relative w-full max-w-xs sm:max-w-sm rounded-xl bg-white p-5 shadow-2xl border border-gray-200 animate-in fade-in zoom-in-95 duration-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="relative w-full max-w-xs sm:max-w-sm rounded-2xl bg-white dark:bg-[#0E0E0E] p-5 shadow-2xl border border-slate-200 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-100">
             {/* Popover Header */}
-            <div className="flex items-start justify-between pb-2.5">
-              <h4 className="text-sm font-bold text-gray-950 tracking-tight">
-                {activePopoverEvent.title || 'UK Returnees Group A'}
+            <div className="flex items-start justify-between pb-2.5 border-b border-slate-100 dark:border-zinc-800">
+              <h4 className="text-sm font-bold text-[#0A2540] dark:text-white tracking-tight leading-snug">
+                {activePopoverEvent.title || 'Agenda Kegiatan'}
               </h4>
 
               <div className="flex items-center gap-1">
-                <button
-                  onClick={() => alert(`Edit: ${activePopoverEvent.title}`)}
-                  className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100"
-                >
-                  <Pencil className="size-3.5" />
-                </button>
+                {onEditSchedule && (
+                  <button
+                    onClick={() => {
+                      const target = activePopoverEvent;
+                      setActivePopoverEvent(null);
+                      onEditSchedule(target);
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-[#005596] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                    title="Edit Jadwal"
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                )}
                 <button
                   onClick={() => setActivePopoverEvent(null)}
-                  className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  title="Tutup"
                 >
                   <X className="size-3.5" />
                 </button>
@@ -518,37 +564,31 @@ export function MonthlyCalendarView({
             </div>
 
             {/* Status Badge */}
-            <div className="flex items-center gap-2 py-1">
-              <span className="text-xs text-[#64748B] font-normal">Status:</span>
+            <div className="flex items-center gap-2 py-2">
+              <span className="text-xs text-[#64748B] dark:text-zinc-400 font-normal">Status:</span>
               {(() => {
                 const effectiveStatus = getEffectiveEventStatus(activePopoverEvent);
                 return (
                   <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
                     effectiveStatus === 'Batal'
-                      ? 'bg-rose-50 text-rose-600 border-rose-200'
+                      ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60'
                       : effectiveStatus === 'Berubah'
-                      ? 'bg-amber-50 text-amber-600 border-amber-200'
+                      ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60'
                       : effectiveStatus === 'Completed' || effectiveStatus === 'Selesai'
-                      ? 'bg-blue-50 text-blue-600 border-blue-200'
-                      : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/60'
+                      : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60'
                   }`}>
-                    {effectiveStatus === 'Batal'
-                      ? 'Batal'
-                      : effectiveStatus === 'Berubah'
-                      ? 'Berubah'
-                      : effectiveStatus === 'Completed' || effectiveStatus === 'Selesai'
-                      ? 'Selesai'
-                      : 'Terjadwal'}
+                    {effectiveStatus}
                   </span>
                 );
               })()}
             </div>
 
             {/* Fields matching simplified structure */}
-            <div className="pt-2 space-y-2 text-xs text-gray-700">
+            <div className="pt-1 space-y-2 text-xs text-slate-700 dark:text-zinc-300">
               <div className="flex items-baseline justify-between">
-                <span className="text-[#64748B] text-xs font-normal">Tanggal:</span>
-                <span className="font-semibold text-[#005596]">
+                <span className="text-[#64748B] dark:text-zinc-400 text-xs font-normal">Tanggal:</span>
+                <span className="font-semibold text-[#005596] dark:text-[#38BDF8]">
                   {new Date(activePopoverEvent.date).toLocaleDateString('id-ID', {
                     weekday: 'long',
                     day: 'numeric',
@@ -559,30 +599,39 @@ export function MonthlyCalendarView({
               </div>
 
               <div className="flex items-baseline justify-between">
-                <span className="text-[#64748B] text-xs font-normal">Jam:</span>
-                <span className="font-semibold text-[#0A2540]">
+                <span className="text-[#64748B] dark:text-zinc-400 text-xs font-normal">Jam:</span>
+                <span className="font-semibold text-[#0A2540] dark:text-white">
                   {activePopoverEvent.time || '17:00 - 21:00'} ({activePopoverEvent.durationHours || 4} Jam)
                 </span>
               </div>
 
+              {activePopoverEvent.room && (
+                <div className="flex items-baseline justify-between">
+                  <span className="text-[#64748B] dark:text-zinc-400 text-xs font-normal">Lokasi:</span>
+                  <span className="font-semibold text-[#005596] dark:text-[#38BDF8]">
+                    📍 {activePopoverEvent.room}
+                  </span>
+                </div>
+              )}
+
               {activePopoverEvent.agenda && (
-                <div className="pt-1 border-t border-slate-100">
-                  <span className="text-[#64748B] text-[11px] block font-normal">Agenda / Kegiatan:</span>
-                  <p className="font-medium text-[#1E293B] text-xs mt-0.5 whitespace-pre-wrap">
+                <div className="pt-1.5 border-t border-slate-100 dark:border-zinc-800">
+                  <span className="text-[#64748B] dark:text-zinc-400 text-[11px] block font-normal">Uraian Tugas / Agenda:</span>
+                  <p className="font-medium text-[#1E293B] dark:text-white text-xs mt-0.5 whitespace-pre-wrap">
                     {activePopoverEvent.agenda}
                   </p>
                 </div>
               )}
 
-              <div className="pt-1 border-t border-slate-100">
-                <span className="text-[#64748B] text-[11px] block font-normal">
+              <div className="pt-1.5 border-t border-slate-100 dark:border-zinc-800">
+                <span className="text-[#64748B] dark:text-zinc-400 text-[11px] block font-normal">
                   Tim yang Ditugaskan ({activePopoverEvent.assignedMemberNames.length} Personil):
                 </span>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {activePopoverEvent.assignedMemberNames.map((name, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 rounded-full bg-[#E0F2FE] text-[#005596] border border-[#00A2E9]/40 text-[11px] font-semibold"
+                      className="px-2 py-0.5 rounded-full bg-[#E0F2FE] dark:bg-zinc-800 text-[#005596] dark:text-[#38BDF8] border border-[#00A2E9]/40 dark:border-zinc-700 text-[11px] font-semibold"
                     >
                       👤 {name}
                     </span>
@@ -592,7 +641,7 @@ export function MonthlyCalendarView({
             </div>
 
             {/* Close Button */}
-            <div className="pt-4 border-t border-slate-100 flex justify-end mt-2">
+            <div className="pt-3.5 border-t border-slate-100 dark:border-zinc-800 flex justify-end mt-2">
               <button
                 onClick={() => setActivePopoverEvent(null)}
                 className="px-4 py-1.5 rounded-lg bg-[#005596] hover:bg-[#004275] text-white text-xs font-semibold cursor-pointer transition-colors shadow-xs"
