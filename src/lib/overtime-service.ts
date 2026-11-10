@@ -20,7 +20,7 @@ export const DEFAULT_TASK_TYPES: TaskType[] = [
   { id: 'tt-1', name: 'Pemeliharaan Studio Multimedia', category: 'Tugas Pokok' },
   { id: 'tt-2', name: 'Lembur GR (Gladi Resik)', category: 'Tugas Pokok' },
   { id: 'tt-3', name: 'Live Streaming BOD / RUPS', category: 'Tugas Pokok' },
-  { id: 'tt-4', name: 'Support Agenda Kegiatan', category: 'Tugas Support' },
+  { id: 'tt-4', name: 'Lembur Support Agenda', category: 'Tugas Support' },
   { id: 'tt-5', name: 'Bantuan Teknis Vicon Gandul', category: 'Tugas Support' },
   { id: 'tt-6', name: 'Standby Insidental Lintas Divisi', category: 'Tugas Support' },
 ];
@@ -138,12 +138,23 @@ export async function saveOvertimeStore(store: OvertimeStore): Promise<void> {
   }
 }
 
-// Helper to detect if an event/task is "GR (Gladi Resik)"
-export function isGREvent(eventOrTitle: OvertimeEvent | string): boolean {
-  const title = typeof eventOrTitle === 'string' ? eventOrTitle : eventOrTitle?.title;
-  if (!title) return false;
-  return /gladi\s*resik|\bgr\b/i.test(title);
+// Helper to detect if an event/task is considered Overtime ("Lembur" or "GR / Gladi Resik")
+export function isOvertimeEvent(eventOrTitle: OvertimeEvent | string): boolean {
+  if (typeof eventOrTitle === 'string') {
+    return /lembur|gladi\s*resik|\bgr\b/i.test(eventOrTitle);
+  }
+  const title = eventOrTitle?.title || '';
+  const agenda = eventOrTitle?.agenda || '';
+  const notes = eventOrTitle?.notes || '';
+  return (
+    /lembur|gladi\s*resik|\bgr\b/i.test(title) ||
+    /lembur|gladi\s*resik|\bgr\b/i.test(agenda) ||
+    /lembur|gladi\s*resik|\bgr\b/i.test(notes)
+  );
 }
+
+// Backward-compatible alias
+export const isGREvent = isOvertimeEvent;
 
 // Calculate priority ranking strictly by:
 // 1. totalHours ASC (terendah paling berhak)
@@ -246,15 +257,15 @@ export async function getFullOvertimeData(): Promise<OvertimeApiResponse> {
 }
 
 // Recalculate member total hours, sessions, and last overtime date
-// NOTE: Per requirement, the overtime balance & fair queue logic ONLY applies to "GR (Gladi Resik)" tasks!
+// NOTE: Per requirement, any task containing "Lembur" or "GR (Gladi Resik)" counts towards overtime balance & fair queue!
 export function recalculateMemberTotals(store: OvertimeStore) {
   const memberMap: Record<string, { hours: number; sessions: number; lastDate: string | null }> = {};
   for (const m of store.members) {
     memberMap[m.id] = { hours: 0, sessions: 0, lastDate: null };
   }
   for (const ev of store.events) {
-    // Only GR (Gladi Resik) tasks count towards overtime hours and queue balance
-    if (!isGREvent(ev)) {
+    // Setiap kegiatan dengan kata "Lembur" atau "GR (Gladi Resik)" dihitung ke akumulasi jam lembur
+    if (!isOvertimeEvent(ev)) {
       continue;
     }
 
@@ -305,10 +316,10 @@ export async function recordOvertimeEvent(params: {
     throw new Error('Nama kegiatan dan tanggal wajib diisi.');
   }
 
-  const isGR = isGREvent(params.title);
+  const isOvertime = isOvertimeEvent(params.title);
   const assignedMemberIds = params.assignedMemberIds || [];
-  if (isGR && assignedMemberIds.length === 0) {
-    throw new Error('Untuk kegiatan GR (Gladi Resik), wajib memilih personil teknisi.');
+  if (isOvertime && assignedMemberIds.length === 0) {
+    throw new Error('Untuk kegiatan lembur, wajib memilih personil teknisi yang bertugas.');
   }
 
   // Calculate duration from start and end time if possible, otherwise default 4 hours

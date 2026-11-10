@@ -26,7 +26,7 @@ const DEFAULT_TASK_TYPES: TaskType[] = [
   { id: 'tt-1', name: 'Pemeliharaan Studio Multimedia', category: 'Tugas Pokok' },
   { id: 'tt-2', name: 'Lembur GR (Gladi Resik)', category: 'Tugas Pokok' },
   { id: 'tt-3', name: 'Live Streaming BOD / RUPS', category: 'Tugas Pokok' },
-  { id: 'tt-4', name: 'Support Agenda Kegiatan', category: 'Tugas Support' },
+  { id: 'tt-4', name: 'Lembur Support Agenda', category: 'Tugas Support' },
   { id: 'tt-5', name: 'Bantuan Teknis Vicon Gandul', category: 'Tugas Support' },
   { id: 'tt-6', name: 'Standby Insidental Lintas Divisi', category: 'Tugas Support' },
 ];
@@ -67,11 +67,23 @@ export function AddScheduleModal({
   // 2. Judul Acara / Kegiatan
   const [scheduleTitle, setScheduleTitle] = React.useState('');
 
-  // Check if selected task type is GR (Gladi Resik)
-  const isGRSelected = React.useMemo(() => {
+  // Check if selected task type or title contains "Lembur" or "GR (Gladi Resik)"
+  const isOvertimeSelected = React.useMemo(() => {
     const title = (scheduleTitle || '').toLowerCase();
-    return title.includes('gladi resik') || title.includes('lembur gr') || /\bgr\b/i.test(title);
-  }, [scheduleTitle]);
+    const selectedTask = taskTypes.find((t) => t.id === selectedTaskTypeId);
+    const selectedTaskName = (selectedTask?.name || '').toLowerCase();
+    return (
+      title.includes('lembur') ||
+      title.includes('gladi resik') ||
+      /\bgr\b/i.test(title) ||
+      selectedTaskName.includes('lembur') ||
+      selectedTaskName.includes('gladi resik') ||
+      /\bgr\b/i.test(selectedTaskName)
+    );
+  }, [scheduleTitle, selectedTaskTypeId, taskTypes]);
+
+  // Backward-compatible alias
+  const isGRSelected = isOvertimeSelected;
 
   // 3. Tanggal
   const [shiftDate, setShiftDate] = React.useState('');
@@ -376,7 +388,7 @@ export function AddScheduleModal({
         taskCategory,
         agenda: agenda.trim(),
         notes: agenda.trim(),
-        assignedMemberIds: isGRSelected ? selectedMemberIds : [],
+        assignedMemberIds: selectedMemberIds,
         pdfFileName: uploadedPdf ? uploadedPdf.fileName : null,
         pdfFileKey: uploadedPdf ? uploadedPdf.key : null,
         pdfFileSize: uploadedPdf ? uploadedPdf.size : null,
@@ -949,10 +961,15 @@ export function AddScheduleModal({
           {/* 7. Assign Tim yang Ditugaskan */}
           <div className="space-y-1.5 relative" ref={dropdownRef}>
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-[#1E293B] dark:text-slate-200">
-                Teknisi yang Ditugaskan ({selectedMemberIds.length} Personil)
+              <label className="font-semibold text-[#1E293B] dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
+                <span>Teknisi yang Ditugaskan ({selectedMemberIds.length} Personil)</span>
+                {isOvertimeSelected && (
+                  <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-800">
+                    ⚡ Terkalkulasi Lembur
+                  </span>
+                )}
               </label>
-              <span className="text-[10px] text-[#005596] dark:text-[#38BDF8] font-semibold bg-[#E0F2FE] dark:bg-[#141414] px-2 py-0.5 rounded-full border border-[#00A2E9]/30">
+              <span className="text-[10px] text-[#005596] dark:text-[#38BDF8] font-semibold bg-[#E0F2FE] dark:bg-[#141414] px-2 py-0.5 rounded-full border border-[#00A2E9]/30 shrink-0">
                 ⭐ Prioritas antrean adil
               </span>
             </div>
