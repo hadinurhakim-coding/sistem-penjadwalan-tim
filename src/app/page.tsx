@@ -1,8 +1,10 @@
 import { Suspense } from 'react';
+import { connection } from 'next/server';
 import { MainDashboard } from '@/components/scheduler/MainDashboard';
 import { getFullOvertimeData } from '@/lib/overtime-service';
 
 async function DashboardContainer() {
+  await connection();
   const initialData = await getFullOvertimeData();
   return <MainDashboard initialData={initialData} />;
 }

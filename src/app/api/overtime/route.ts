@@ -23,6 +23,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       title,
+      taskType,
+      room,
       date,
       startTime,
       endTime,
@@ -44,6 +46,8 @@ export async function POST(request: Request) {
 
     const newEvent = await recordOvertimeEvent({
       title,
+      taskType,
+      room,
       date,
       startTime,
       endTime,
@@ -85,6 +89,8 @@ export async function PUT(request: Request) {
     const {
       id,
       title,
+      taskType,
+      room,
       date,
       startTime,
       endTime,
@@ -110,6 +116,8 @@ export async function PUT(request: Request) {
     const updatedEvent = await updateOvertimeEvent({
       id,
       title,
+      taskType,
+      room,
       date,
       startTime,
       endTime,

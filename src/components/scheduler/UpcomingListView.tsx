@@ -14,6 +14,7 @@ import {
   Trash2,
   Calendar,
   Clock,
+  MapPin,
   UserCheck,
   AlertCircle,
   Loader2,
@@ -403,10 +404,16 @@ export function UpcomingListView({
                       {code}
                     </td>
 
-                    {/* Description (Title + Agenda) */}
+                    {/* Description (Title + Agenda + Room) */}
                     <td className="py-3 px-4 max-w-xs sm:max-w-md">
-                      <div className="font-bold text-[#0A2540] dark:text-white leading-snug line-clamp-1">
-                        {evt.title}
+                      <div className="font-bold text-[#0A2540] dark:text-white leading-snug line-clamp-1 flex items-center gap-1.5 flex-wrap">
+                        <span>{evt.title}</span>
+                        {evt.room && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#005596] dark:text-[#38BDF8] bg-[#E0F2FE] dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-[#00A2E9]/20">
+                            <MapPin className="size-2.5" />
+                            <span>{evt.room}</span>
+                          </span>
+                        )}
                       </div>
                       {evt.agenda && (
                         <div className="text-[11px] text-[#64748B] dark:text-[#A1A1AA] line-clamp-1 mt-0.5">

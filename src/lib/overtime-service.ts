@@ -11,6 +11,7 @@ import {
   PriorityStatus,
   TaskCategory,
   TaskType,
+  Room,
 } from '@/types/overtime';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -25,6 +26,15 @@ export const DEFAULT_TASK_TYPES: TaskType[] = [
   { id: 'tt-6', name: 'Standby Insidental Lintas Divisi', category: 'Tugas Support' },
 ];
 
+export const DEFAULT_ROOMS: Room[] = [
+  { id: 'rm-1', name: 'Studio Multimedia Utama' },
+  { id: 'rm-2', name: 'Auditorium PLN Icon Plus' },
+  { id: 'rm-3', name: 'Ruang Rapat Direksi (BOD)' },
+  { id: 'rm-4', name: 'Command Center & NOC' },
+  { id: 'rm-5', name: 'Ruang Vicon Gandul' },
+  { id: 'rm-6', name: 'Meeting Room VIP' },
+];
+
 // Personal member records belong in private runtime storage, never in source code.
 const DEFAULT_MEMBERS: Member[] = [];
 
@@ -32,6 +42,7 @@ const DEFAULT_STORE: OvertimeStore = {
   members: DEFAULT_MEMBERS,
   events: [],
   taskTypes: DEFAULT_TASK_TYPES,
+  rooms: DEFAULT_ROOMS,
 };
 
 // Map row database Neon Postgres ke OvertimeEvent
@@ -44,6 +55,8 @@ function mapRowToEvent(row: any): OvertimeEvent {
     endTime: row.end_time || undefined,
     time: row.time || undefined,
     taskCategory: (row.task_category || 'Tugas Pokok') as TaskCategory,
+    taskType: row.task_type || undefined,
+    room: row.room || undefined,
     agenda: row.agenda || undefined,
     durationHours: Number(row.duration_hours) || 4,
     assignedMemberIds:
@@ -68,10 +81,25 @@ function mapRowToEvent(row: any): OvertimeEvent {
 export async function getOvertimeStore(): Promise<OvertimeStore> {
   if (sql) {
     try {
-      const [membersRows, eventsRows, taskTypesRows] = await Promise.all([
+      // Pastikan tabel rooms dan kolom room & task_type tersedia di Neon Postgres
+      try {
+        await sql`
+          CREATE TABLE IF NOT EXISTS rooms (
+            id VARCHAR(50) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          )
+        `;
+        await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS room VARCHAR(255)`;
+        await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS task_type VARCHAR(255)`;
+      } catch {}
+
+      const [membersRows, eventsRows, taskTypesRows, roomsRows] = await Promise.all([
         sql`SELECT * FROM members ORDER BY id ASC`,
         sql`SELECT * FROM events ORDER BY date ASC, start_time ASC`,
         sql`SELECT * FROM task_types ORDER BY id ASC`,
+        sql`SELECT * FROM rooms ORDER BY id ASC`.catch(() => []),
       ]);
 
       const members: Member[] = membersRows.map((r: any) => ({
@@ -95,10 +123,20 @@ export async function getOvertimeStore(): Promise<OvertimeStore> {
         updatedAt: r.updated_at || undefined,
       }));
 
+      const rooms: Room[] = Array.isArray(roomsRows) && roomsRows.length > 0
+        ? roomsRows.map((r: any) => ({
+            id: String(r.id),
+            name: r.name,
+            createdAt: r.created_at || undefined,
+            updatedAt: r.updated_at || undefined,
+          }))
+        : DEFAULT_ROOMS;
+
       return {
         members: members.length > 0 ? members : DEFAULT_MEMBERS,
         events,
         taskTypes: taskTypes.length > 0 ? taskTypes : DEFAULT_TASK_TYPES,
+        rooms,
       };
     } catch (dbErr) {
       console.warn('Neon Postgres query gagal, beralih ke cache lokal fallback:', dbErr);
@@ -111,10 +149,12 @@ export async function getOvertimeStore(): Promise<OvertimeStore> {
     const fileContent = await fs.readFile(DATA_FILE, 'utf-8');
     const parsed = JSON.parse(fileContent);
     const taskTypes = Array.isArray(parsed.taskTypes) ? parsed.taskTypes : [...DEFAULT_TASK_TYPES];
+    const rooms = Array.isArray(parsed.rooms) ? parsed.rooms : [...DEFAULT_ROOMS];
     return {
       members: parsed.members || DEFAULT_MEMBERS,
       events: parsed.events || [],
       taskTypes,
+      rooms,
     };
   } catch (err: any) {
     if (err.code === 'ENOENT') {
@@ -139,18 +179,21 @@ export async function saveOvertimeStore(store: OvertimeStore): Promise<void> {
 }
 
 // Helper to detect if an event/task is considered Overtime ("Lembur" or "GR / Gladi Resik")
-export function isOvertimeEvent(eventOrTitle: OvertimeEvent | string): boolean {
+// ATURAN: Jika Jenis Tugas bukan Lembur (misal: "Support Agenda", "Pemeliharaan Studio"), maka TIDAK TERMASUK ke jumlah jam data tabel lembur!
+export function isOvertimeEvent(
+  eventOrTitle: Partial<OvertimeEvent> | { taskType?: string; title?: string } | string
+): boolean {
   if (typeof eventOrTitle === 'string') {
     return /lembur|gladi\s*resik|\bgr\b/i.test(eventOrTitle);
   }
+  // 1. Acuan Utama: taskType (Jenis Tugas)
+  const taskType = eventOrTitle?.taskType;
+  if (taskType) {
+    return /lembur|gladi\s*resik|\bgr\b/i.test(taskType);
+  }
+  // 2. Acuan Sekunder: jika taskType belum tercatat, cek title
   const title = eventOrTitle?.title || '';
-  const agenda = eventOrTitle?.agenda || '';
-  const notes = eventOrTitle?.notes || '';
-  return (
-    /lembur|gladi\s*resik|\bgr\b/i.test(title) ||
-    /lembur|gladi\s*resik|\bgr\b/i.test(agenda) ||
-    /lembur|gladi\s*resik|\bgr\b/i.test(notes)
-  );
+  return /lembur|gladi\s*resik|\bgr\b/i.test(title);
 }
 
 // Backward-compatible alias
@@ -253,6 +296,7 @@ export async function getFullOvertimeData(): Promise<OvertimeApiResponse> {
     events: store.events,
     metrics,
     taskTypes: store.taskTypes || DEFAULT_TASK_TYPES,
+    rooms: store.rooms || DEFAULT_ROOMS,
   };
 }
 
@@ -297,6 +341,8 @@ export async function recordOvertimeEvent(params: {
   endTime?: string;
   time?: string;
   taskCategory?: 'Tugas Pokok' | 'Tugas Support';
+  taskType?: string;
+  room?: string;
   agenda?: string;
   country?: string;
   flightNumber?: string;
@@ -316,7 +362,7 @@ export async function recordOvertimeEvent(params: {
     throw new Error('Nama kegiatan dan tanggal wajib diisi.');
   }
 
-  const isOvertime = isOvertimeEvent(params.title);
+  const isOvertime = isOvertimeEvent({ ...params, taskType: params.taskType, title: params.title });
   const assignedMemberIds = params.assignedMemberIds || [];
   if (isOvertime && assignedMemberIds.length === 0) {
     throw new Error('Untuk kegiatan lembur, wajib memilih personil teknisi yang bertugas.');
@@ -356,6 +402,8 @@ export async function recordOvertimeEvent(params: {
     endTime: params.endTime,
     time: formattedTime,
     taskCategory: params.taskCategory || 'Tugas Pokok',
+    taskType: params.taskType,
+    room: params.room,
     agenda: params.agenda || params.notes || '',
     country: params.country || 'Gandul Central / Studio Multimedia',
     flightNumber: params.flightNumber || 'EVT-01',
@@ -381,13 +429,14 @@ export async function recordOvertimeEvent(params: {
     try {
       await sql`
         INSERT INTO events (
-          id, title, date, start_time, end_time, time, task_category, agenda,
+          id, title, date, start_time, end_time, time, task_category, task_type, room, agenda,
           duration_hours, assigned_member_ids, assigned_member_names, status, notes,
           pdf_file_name, pdf_file_key, pdf_file_size, pdf_uploaded_at, created_at
         ) VALUES (
           ${newEvent.id}, ${newEvent.title}, ${newEvent.date}, ${newEvent.startTime || null},
           ${newEvent.endTime || null}, ${newEvent.time || null}, ${newEvent.taskCategory || 'Tugas Pokok'},
-          ${newEvent.agenda || null}, ${newEvent.durationHours}, ${JSON.stringify(newEvent.assignedMemberIds)}::jsonb,
+          ${newEvent.taskType || null}, ${newEvent.room || null}, ${newEvent.agenda || null},
+          ${newEvent.durationHours}, ${JSON.stringify(newEvent.assignedMemberIds)}::jsonb,
           ${JSON.stringify(newEvent.assignedMemberNames)}::jsonb, ${newEvent.status || 'Upcoming Session'},
           ${newEvent.notes || null}, ${newEvent.pdfFileName || null}, ${newEvent.pdfFileKey || null},
           ${newEvent.pdfFileSize || null}, ${newEvent.pdfUploadedAt || null}, ${newEvent.createdAt}
@@ -420,6 +469,8 @@ export async function updateOvertimeEvent(params: {
   endTime?: string;
   time?: string;
   taskCategory?: TaskCategory;
+  taskType?: string;
+  room?: string;
   agenda?: string;
   assignedMemberIds?: string[];
   status?: 'Upcoming Session' | 'In Progress' | 'Completed';
@@ -468,6 +519,8 @@ export async function updateOvertimeEvent(params: {
     endTime: end,
     time: formattedTime,
     taskCategory: params.taskCategory !== undefined ? params.taskCategory : existing.taskCategory,
+    taskType: params.taskType !== undefined ? params.taskType : existing.taskType,
+    room: params.room !== undefined ? params.room : existing.room,
     agenda: params.agenda !== undefined ? params.agenda : existing.agenda,
     notes:
       params.notes !== undefined
@@ -499,6 +552,8 @@ export async function updateOvertimeEvent(params: {
           end_time = ${updated.endTime || null},
           time = ${updated.time || null},
           task_category = ${updated.taskCategory || 'Tugas Pokok'},
+          task_type = ${updated.taskType || null},
+          room = ${updated.room || null},
           agenda = ${updated.agenda || null},
           duration_hours = ${updated.durationHours},
           assigned_member_ids = ${JSON.stringify(updated.assignedMemberIds)}::jsonb,
@@ -730,6 +785,99 @@ export async function deleteTaskType(id: string): Promise<void> {
       await sql`DELETE FROM task_types WHERE id = ${id}`;
     } catch (dbErr) {
       console.warn('Gagal delete task_type di Neon Postgres:', dbErr);
+    }
+  }
+
+  await saveOvertimeStore(store);
+}
+
+// ==========================================
+// Rooms (Daftar Ruangan) Table Management
+// ==========================================
+
+export async function getRooms(): Promise<Room[]> {
+  const store = await getOvertimeStore();
+  return Array.isArray(store.rooms) && store.rooms.length > 0 ? store.rooms : [...DEFAULT_ROOMS];
+}
+
+export async function addRoom(name: string): Promise<Room> {
+  if (!name.trim()) {
+    throw new Error('Nama ruangan tidak boleh kosong.');
+  }
+  const store = await getOvertimeStore();
+  if (!Array.isArray(store.rooms)) {
+    store.rooms = [...DEFAULT_ROOMS];
+  }
+
+  const newRoom: Room = {
+    id: `rm-${Date.now()}`,
+    name: name.trim(),
+    createdAt: new Date().toISOString(),
+  };
+
+  store.rooms.push(newRoom);
+
+  if (sql) {
+    try {
+      await sql`
+        INSERT INTO rooms (id, name, created_at, updated_at)
+        VALUES (${newRoom.id}, ${newRoom.name}, ${newRoom.createdAt}, ${newRoom.createdAt})
+        ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name
+      `;
+    } catch (dbErr) {
+      console.warn('Gagal insert room di Neon Postgres:', dbErr);
+    }
+  }
+
+  await saveOvertimeStore(store);
+  return newRoom;
+}
+
+export async function updateRoom(id: string, name: string): Promise<Room> {
+  if (!name.trim()) {
+    throw new Error('Nama ruangan tidak boleh kosong.');
+  }
+  const store = await getOvertimeStore();
+  if (!Array.isArray(store.rooms)) {
+    store.rooms = [...DEFAULT_ROOMS];
+  }
+
+  const index = store.rooms.findIndex((r) => r.id === id);
+  if (index === -1) {
+    throw new Error('Ruangan tidak ditemukan.');
+  }
+
+  store.rooms[index].name = name.trim();
+  store.rooms[index].updatedAt = new Date().toISOString();
+
+  if (sql) {
+    try {
+      await sql`
+        UPDATE rooms SET name = ${store.rooms[index].name}, updated_at = ${store.rooms[index].updatedAt}
+        WHERE id = ${id}
+      `;
+    } catch (dbErr) {
+      console.warn('Gagal update room di Neon Postgres:', dbErr);
+    }
+  }
+
+  await saveOvertimeStore(store);
+  return store.rooms[index];
+}
+
+export async function deleteRoom(id: string): Promise<void> {
+  const store = await getOvertimeStore();
+  if (!Array.isArray(store.rooms)) {
+    store.rooms = [...DEFAULT_ROOMS];
+  }
+
+  store.rooms = store.rooms.filter((r) => r.id !== id);
+
+  if (sql) {
+    try {
+      await sql`DELETE FROM rooms WHERE id = ${id}`;
+    } catch (dbErr) {
+      console.warn('Gagal delete room di Neon Postgres:', dbErr);
     }
   }
 

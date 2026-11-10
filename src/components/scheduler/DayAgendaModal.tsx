@@ -5,6 +5,7 @@ import {
   X,
   Calendar,
   Clock,
+  MapPin,
   UserCheck,
   Plus,
   AlertCircle,
@@ -248,12 +249,20 @@ export function DayAgendaModal({
                     </div>
                   )}
 
-                  {/* Jam Operasional */}
-                  <div className="mt-2 flex items-center gap-2 text-xs text-[#005596] font-semibold">
-                    <Clock className="size-3.5 text-[#00A2E9]" />
-                    <span>
-                      {evt.time || '17:00 - 21:00'} ({evt.durationHours || 4} Jam)
-                    </span>
+                  {/* Jam Operasional & Ruangan */}
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#005596] font-semibold">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="size-3.5 text-[#00A2E9]" />
+                      <span>
+                        {evt.time || '17:00 - 21:00'} ({evt.durationHours || 4} Jam)
+                      </span>
+                    </div>
+                    {evt.room && (
+                      <div className="flex items-center gap-1 text-[#005596] bg-[#E0F2FE] px-2 py-0.5 rounded-md border border-[#00A2E9]/30 text-[11px]">
+                        <MapPin className="size-3 text-[#00A2E9]" />
+                        <span>{evt.room}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Uraian Agenda */}

@@ -85,6 +85,8 @@ CREATE TABLE IF NOT EXISTS events (
     pdf_file_key TEXT,
     pdf_file_size BIGINT,
     pdf_uploaded_at TIMESTAMPTZ,
+    room VARCHAR(255),
+    task_type VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -97,6 +99,14 @@ CREATE TABLE IF NOT EXISTS task_types (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 5. TABEL RUANGAN / LOKASI KEGIATAN DINAMIS
+CREATE TABLE IF NOT EXISTS rooms (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Member records must be supplied privately after schema initialization.
 
 -- 6. INITIAL SEED: JENIS TUGAS DEFAULT
@@ -105,7 +115,22 @@ VALUES
     ('tt-1', 'Pemeliharaan Studio Multimedia', 'Tugas Pokok'),
     ('tt-2', 'Lembur GR (Gladi Resik)', 'Tugas Pokok'),
     ('tt-3', 'Live Streaming BOD / RUPS', 'Tugas Pokok'),
-    ('tt-4', 'Support Agenda Kegiatan', 'Tugas Support'),
+    ('tt-4', 'Lembur Support Agenda', 'Tugas Support'),
     ('tt-5', 'Bantuan Teknis Vicon Gandul', 'Tugas Support'),
     ('tt-6', 'Standby Insidental Lintas Divisi', 'Tugas Support')
 ON CONFLICT (id) DO NOTHING;
+
+-- 7. INITIAL SEED: RUANGAN DEFAULT
+INSERT INTO rooms (id, name)
+VALUES
+    ('rm-1', 'Studio Multimedia Utama'),
+    ('rm-2', 'Auditorium PLN Icon Plus'),
+    ('rm-3', 'Ruang Rapat Direksi (BOD)'),
+    ('rm-4', 'Command Center & NOC'),
+    ('rm-5', 'Ruang Vicon Gandul'),
+    ('rm-6', 'Meeting Room VIP')
+ON CONFLICT (id) DO NOTHING;
+
+-- Migrasi tambahan kolom jika tabel events sudah ada sebelumnya
+ALTER TABLE events ADD COLUMN IF NOT EXISTS room VARCHAR(255);
+ALTER TABLE events ADD COLUMN IF NOT EXISTS task_type VARCHAR(255);

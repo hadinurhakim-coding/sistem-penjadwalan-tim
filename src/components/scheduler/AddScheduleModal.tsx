@@ -12,6 +12,7 @@ import {
   CalendarDays,
   FileText,
   Briefcase,
+  MapPin,
   Plus,
   Trash2,
   Pencil,
@@ -20,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/shadcn-studio/date-picker';
-import { RankedMember, TaskCategory, OvertimeEvent, TaskType } from '@/types/overtime';
+import { RankedMember, TaskCategory, OvertimeEvent, TaskType, Room } from '@/types/overtime';
 
 const DEFAULT_TASK_TYPES: TaskType[] = [
   { id: 'tt-1', name: 'Pemeliharaan Studio Multimedia', category: 'Tugas Pokok' },
@@ -29,6 +30,15 @@ const DEFAULT_TASK_TYPES: TaskType[] = [
   { id: 'tt-4', name: 'Lembur Support Agenda', category: 'Tugas Support' },
   { id: 'tt-5', name: 'Bantuan Teknis Vicon Gandul', category: 'Tugas Support' },
   { id: 'tt-6', name: 'Standby Insidental Lintas Divisi', category: 'Tugas Support' },
+];
+
+const DEFAULT_ROOMS: Room[] = [
+  { id: 'rm-1', name: 'Studio Multimedia Utama' },
+  { id: 'rm-2', name: 'Auditorium PLN Icon Plus' },
+  { id: 'rm-3', name: 'Ruang Rapat Direksi (BOD)' },
+  { id: 'rm-4', name: 'Command Center & NOC' },
+  { id: 'rm-5', name: 'Ruang Vicon Gandul' },
+  { id: 'rm-6', name: 'Meeting Room VIP' },
 ];
 
 interface AddScheduleModalProps {
@@ -68,22 +78,30 @@ export function AddScheduleModal({
   const [scheduleTitle, setScheduleTitle] = React.useState('');
 
   // Check if selected task type or title contains "Lembur" or "GR (Gladi Resik)"
+  // ATURAN: Jika Jenis tugas nya bukan Lembur maka tidak termasuk ke jumlah jam data table lembur
   const isOvertimeSelected = React.useMemo(() => {
-    const title = (scheduleTitle || '').toLowerCase();
     const selectedTask = taskTypes.find((t) => t.id === selectedTaskTypeId);
-    const selectedTaskName = (selectedTask?.name || '').toLowerCase();
-    return (
-      title.includes('lembur') ||
-      title.includes('gladi resik') ||
-      /\bgr\b/i.test(title) ||
-      selectedTaskName.includes('lembur') ||
-      selectedTaskName.includes('gladi resik') ||
-      /\bgr\b/i.test(selectedTaskName)
-    );
+    if (selectedTask) {
+      return /lembur|gladi\s*resik|\bgr\b/i.test(selectedTask.name);
+    }
+    const title = (scheduleTitle || '').toLowerCase();
+    return title.includes('lembur') || title.includes('gladi resik') || /\bgr\b/i.test(title);
   }, [scheduleTitle, selectedTaskTypeId, taskTypes]);
 
   // Backward-compatible alias
   const isGRSelected = isOvertimeSelected;
+
+  // 1.5. Rooms (Nama Ruangan / Lokasi) dari Database Table 'rooms'
+  const [rooms, setRooms] = React.useState<Room[]>([]);
+  const [selectedRoomId, setSelectedRoomId] = React.useState<string | null>(null);
+  const [selectedRoomName, setSelectedRoomName] = React.useState<string>('');
+  const [isRoomDropdownOpen, setIsRoomDropdownOpen] = React.useState(false);
+  const [roomSearch, setRoomSearch] = React.useState('');
+  const [editingRoomId, setEditingRoomId] = React.useState<string | null>(null);
+  const [editingRoomName, setEditingRoomName] = React.useState('');
+  const [isAddingNewRoom, setIsAddingNewRoom] = React.useState(false);
+  const [newRoomName, setNewRoomName] = React.useState('');
+  const roomDropdownRef = React.useRef<HTMLDivElement>(null);
 
   // 3. Tanggal
   const [shiftDate, setShiftDate] = React.useState('');
@@ -125,17 +143,36 @@ export function AddScheduleModal({
     }
   };
 
+  // Fetch rooms from Database table '/api/rooms'
+  const fetchRooms = async () => {
+    try {
+      const res = await fetch('/api/rooms');
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setRooms(json.data);
+      }
+    } catch (e) {
+      console.error('Error fetching rooms:', e);
+    }
+  };
+
   React.useEffect(() => {
     fetchTaskTypes();
+    fetchRooms();
   }, []);
 
   React.useEffect(() => {
     if (isOpen) {
       fetchTaskTypes();
+      fetchRooms();
       setIsTaskTypeDropdownOpen(false);
+      setIsRoomDropdownOpen(false);
       setEditingTaskTypeId(null);
+      setEditingRoomId(null);
       setIsAddingNewTaskType(false);
+      setIsAddingNewRoom(false);
       setTaskTypeSearch('');
+      setRoomSearch('');
 
       if (eventToEdit) {
         setScheduleTitle(eventToEdit.title);
@@ -146,6 +183,7 @@ export function AddScheduleModal({
         setEndTime(end);
         setTaskCategory(eventToEdit.taskCategory || 'Tugas Pokok');
         setAgenda(eventToEdit.agenda || eventToEdit.notes || '');
+        setSelectedRoomName(eventToEdit.room || '');
         if (eventToEdit.pdfFileName && eventToEdit.pdfFileKey) {
           setExistingPdf({
             fileName: eventToEdit.pdfFileName,
@@ -161,11 +199,18 @@ export function AddScheduleModal({
         setIsDropdownOpen(false);
 
         // Find matching task type
-        const match = taskTypes.find((t) => t.name.toLowerCase() === eventToEdit.title.toLowerCase());
+        const match = taskTypes.find((t) => t.name.toLowerCase() === (eventToEdit.taskType || eventToEdit.title).toLowerCase());
         if (match) setSelectedTaskTypeId(match.id);
         else setSelectedTaskTypeId(null);
+
+        // Find matching room
+        const matchRoom = (rooms.length > 0 ? rooms : DEFAULT_ROOMS).find((r) => r.name.toLowerCase() === (eventToEdit.room || '').toLowerCase());
+        if (matchRoom) setSelectedRoomId(matchRoom.id);
+        else setSelectedRoomId(null);
       } else {
         setScheduleTitle('');
+        setSelectedRoomName('');
+        setSelectedRoomId(null);
         setShiftDate(preselectedDate || new Date().toISOString().split('T')[0]);
         setStartTime('17:00');
         setEndTime('21:00');
@@ -209,6 +254,9 @@ export function AddScheduleModal({
       if (taskTypeDropdownRef.current && !taskTypeDropdownRef.current.contains(event.target as Node)) {
         setIsTaskTypeDropdownOpen(false);
       }
+      if (roomDropdownRef.current && !roomDropdownRef.current.contains(event.target as Node)) {
+        setIsRoomDropdownOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -223,6 +271,90 @@ export function AddScheduleModal({
   const filteredTaskTypes = taskTypes.filter((t) =>
     t.name.toLowerCase().includes(taskTypeSearch.toLowerCase())
   );
+
+  // Filter rooms based on search
+  const activeRooms = rooms.length > 0 ? rooms : DEFAULT_ROOMS;
+  const filteredRooms = activeRooms.filter((r) =>
+    r.name.toLowerCase().includes(roomSearch.toLowerCase())
+  );
+
+  // Select room handler
+  const handleSelectRoom = (item: Room) => {
+    setSelectedRoomId(item.id);
+    setSelectedRoomName(item.name);
+    setIsRoomDropdownOpen(false);
+  };
+
+  // Clear room handler
+  const handleClearRoom = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedRoomId(null);
+    setSelectedRoomName('');
+  };
+
+  // Add new room to database
+  const handleAddNewRoomToDB = async () => {
+    if (!newRoomName.trim()) return;
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newRoomName.trim() }),
+      });
+      const json = await res.json();
+      if (json.success && json.rooms) {
+        setRooms(json.rooms);
+        setSelectedRoomId(json.data?.id || null);
+        setSelectedRoomName(newRoomName.trim());
+        setNewRoomName('');
+        setIsAddingNewRoom(false);
+        setIsRoomDropdownOpen(false);
+      }
+    } catch (e) {
+      console.error('Error adding room:', e);
+    }
+  };
+
+  // Save edited room to database
+  const handleSaveEditedRoom = async (id: string) => {
+    if (!editingRoomName.trim()) return;
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name: editingRoomName.trim() }),
+      });
+      const json = await res.json();
+      if (json.success && json.rooms) {
+        setRooms(json.rooms);
+        setEditingRoomId(null);
+        if (selectedRoomId === id) {
+          setSelectedRoomName(editingRoomName.trim());
+        }
+      }
+    } catch (e) {
+      console.error('Error updating room:', e);
+    }
+  };
+
+  // Delete room from database
+  const handleDeleteRoom = async (id: string) => {
+    try {
+      const res = await fetch(`/api/rooms?id=${id}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (json.success && json.rooms) {
+        setRooms(json.rooms);
+        if (selectedRoomId === id) {
+          setSelectedRoomId(null);
+          setSelectedRoomName('');
+        }
+      }
+    } catch (e) {
+      console.error('Error deleting room:', e);
+    }
+  };
 
   // Select task type (Gambar 1 flow)
   const handleSelectTaskType = (item: TaskType) => {
@@ -381,6 +513,8 @@ export function AddScheduleModal({
       const method = eventToEdit ? 'PUT' : 'POST';
       const payload: any = {
         title: scheduleTitle.trim(),
+        taskType: selectedTask?.name || (taskTypes.find((t) => t.id === selectedTaskTypeId)?.name) || undefined,
+        room: selectedRoomName.trim() || undefined,
         date: shiftDate,
         startTime,
         endTime,
@@ -715,6 +849,236 @@ export function AddScheduleModal({
                         <button
                           type="button"
                           onClick={handleAddNewTaskTypeToDB}
+                          className="px-3 py-1 rounded text-[11px] font-bold bg-[#005596] text-white hover:bg-[#004275] cursor-pointer flex items-center gap-1 shadow-2xs"
+                        >
+                          <Plus className="size-3" />
+                          <span>Simpan ke Database</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ======================================================== */}
+          {/* 1.5. PILIH RUANGAN / LOKASI KEGIATAN                    */}
+          {/* Database Table 'rooms' dengan fitur sama seperti taskTypes */}
+          {/* ======================================================== */}
+          <div className="space-y-1.5 relative" ref={roomDropdownRef}>
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-[#1E293B] dark:text-slate-200 flex items-center gap-1.5">
+                <MapPin className="size-3.5 text-[#005596] dark:text-[#38BDF8]" />
+                <span>Pilih Ruangan / Lokasi</span>
+              </label>
+              <span className="text-[10px] text-[#64748B] dark:text-slate-400">
+                Tabel Database: <strong className="text-[#005596] dark:text-[#38BDF8]">rooms</strong>
+              </span>
+            </div>
+
+            {/* Input Trigger with Placeholder and Clear Button */}
+            <div
+              onClick={() => setIsRoomDropdownOpen(!isRoomDropdownOpen)}
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-[#222222] bg-white dark:bg-black text-xs text-[#1E293B] dark:text-[#E2E8F0] flex items-center justify-between cursor-pointer hover:border-[#00A2E9] focus-within:border-[#00A2E9] shadow-2xs transition-all"
+            >
+              <div className="flex items-center gap-2 flex-1 truncate">
+                {selectedRoomName ? (
+                  <div className="flex items-center gap-2 truncate">
+                    <span>📍</span>
+                    <span className="font-bold text-[#005596] dark:text-[#38BDF8] truncate">
+                      {selectedRoomName}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-slate-400 select-none flex items-center gap-1">
+                    <span className="text-[#00A2E9] animate-pulse">|</span> Select room / Pilih nama ruangan...
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                {selectedRoomName && (
+                  <button
+                    type="button"
+                    onClick={handleClearRoom}
+                    className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    title="Kosongkan pilihan ruangan"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform ${
+                    isRoomDropdownOpen ? 'rotate-180 text-[#00A2E9]' : ''
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* Dropdown Menu matching Gambar 1 list with hover and edit features */}
+            {isRoomDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 z-40 mt-1.5 rounded-xl bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-[#222222] shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-100 max-h-72 overflow-y-auto">
+                {/* Search Box */}
+                <div className="p-1 mb-1">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={roomSearch}
+                      onChange={(e) => setRoomSearch(e.target.value)}
+                      placeholder="Cari nama ruangan / lokasi..."
+                      className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#222222] text-xs placeholder-slate-400 focus:outline-none focus:border-[#00A2E9] focus:ring-1 focus:ring-[#00A2E9] bg-white dark:bg-[#050505] text-[#1E293B] dark:text-white"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Room List with Edit and Delete */}
+                <div className="space-y-1 max-h-48 overflow-y-auto pr-0.5">
+                  {filteredRooms.map((room) => {
+                    const isSelected = selectedRoomId === room.id || selectedRoomName === room.name;
+                    const isEditing = editingRoomId === room.id;
+
+                    return (
+                      <div
+                        key={room.id}
+                        className={`group flex items-center justify-between p-2 rounded-lg text-xs transition-colors ${
+                          isSelected
+                            ? 'bg-[#E0F2FE]/60 dark:bg-[#141414] border border-[#00A2E9]/40'
+                            : 'hover:bg-[#F4F7FA] dark:hover:bg-[#101B33]'
+                        }`}
+                      >
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5 flex-1 mr-2">
+                            <input
+                              type="text"
+                              value={editingRoomName}
+                              onChange={(e) => setEditingRoomName(e.target.value)}
+                              className="flex-1 px-2 py-0.5 rounded border border-slate-300 dark:border-[#222222] text-xs bg-white dark:bg-black text-[#1E293B] dark:text-white"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleSaveEditedRoom(room.id);
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEditedRoom(room.id)}
+                              className="px-2 py-0.5 rounded bg-[#005596] text-white text-[10px] font-bold cursor-pointer"
+                            >
+                              Simpan
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingRoomId(null)}
+                              className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => handleSelectRoom(room)}
+                            className="flex items-center gap-2 flex-1 cursor-pointer truncate"
+                          >
+                            <span>📍</span>
+                            <span className="font-semibold text-[#0A2540] dark:text-slate-200 truncate">
+                              {room.name}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Action Buttons: Edit and Delete */}
+                        {!isEditing && (
+                          <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingRoomId(room.id);
+                                setEditingRoomName(room.name);
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-[#005596] dark:hover:text-[#38BDF8] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                              title="Edit nama ruangan"
+                            >
+                              <Pencil className="size-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteRoom(room.id);
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                              title="Hapus ruangan"
+                            >
+                              <Trash2 className="size-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {filteredRooms.length === 0 && (
+                    <div className="text-center py-4 text-xs text-slate-400">
+                      <span>Ruangan tidak ditemukan.</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Add New Room to Database */}
+                <div className="mt-2 pt-2 border-t border-slate-100 dark:border-[#222222]">
+                  {!isAddingNewRoom ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsAddingNewRoom(true);
+                      }}
+                      className="w-full py-1.5 px-2 rounded-lg text-xs font-semibold text-[#00A2E9] dark:text-[#38BDF8] hover:bg-[#F0F9FF] dark:hover:bg-[#1A2D54] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Plus className="size-3.5" />
+                      <span>+ Tambah Ruangan Baru ke Database</span>
+                    </button>
+                  ) : (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-2.5 rounded-lg bg-[#F0F9FF] dark:bg-[#141414] border border-[#00A2E9]/40 space-y-2 animate-in fade-in duration-100"
+                    >
+                      <div className="text-[11px] font-bold text-[#005596] dark:text-[#38BDF8]">
+                        Tambah Ruangan Baru:
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={newRoomName}
+                          onChange={(e) => setNewRoomName(e.target.value)}
+                          placeholder="Nama ruangan / lokasi baru..."
+                          className="w-full px-2.5 py-1 rounded-md border border-slate-300 dark:border-[#27272A] text-xs bg-white dark:bg-black text-[#1E293B] dark:text-white"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddNewRoomToDB();
+                            }
+                          }}
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex items-center justify-end gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingNewRoom(false)}
+                          className="px-2.5 py-1 rounded text-[11px] font-medium text-slate-500 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-[#222222] cursor-pointer"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddNewRoomToDB}
                           className="px-3 py-1 rounded text-[11px] font-bold bg-[#005596] text-white hover:bg-[#004275] cursor-pointer flex items-center gap-1 shadow-2xs"
                         >
                           <Plus className="size-3" />
@@ -1068,10 +1432,6 @@ export function AddScheduleModal({
                             </div>
                           </div>
                         </div>
-
-                        <span className="text-[10px] font-mono text-[#005596] dark:text-[#38BDF8] font-semibold">
-                          {member.totalHours} Jam
-                        </span>
                       </div>
                     );
                   })}

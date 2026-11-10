@@ -37,11 +37,20 @@ export interface OvertimeEvent {
   passMemberIds?: string[]; // members who passed/berhalangan
   status?: 'Upcoming Session' | 'In Progress' | 'Completed';
   notes?: string;
+  room?: string; // Nama Ruangan / Lokasi kegiatan
+  taskType?: string; // Nama Jenis Tugas (e.g. "Lembur GR (Gladi Resik)", "Support Agenda")
   pdfFileName?: string;
   pdfFileKey?: string;
   pdfFileSize?: number;
   pdfUploadedAt?: string;
   createdAt: string;
+}
+
+export interface Room {
+  id: string;
+  name: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TaskType {
@@ -56,6 +65,7 @@ export interface OvertimeStore {
   members: Member[];
   events: OvertimeEvent[];
   taskTypes?: TaskType[];
+  rooms?: Room[];
 }
 
 export interface FairnessMetrics {
@@ -75,4 +85,5 @@ export interface OvertimeApiResponse {
   events: OvertimeEvent[];
   metrics: FairnessMetrics;
   taskTypes?: TaskType[];
+  rooms?: Room[];
 }
