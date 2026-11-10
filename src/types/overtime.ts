@@ -19,6 +19,15 @@ export interface RankedMember extends Member {
 
 export type TaskCategory = 'Tugas Pokok' | 'Tugas Support';
 
+export type EventStatus =
+  | 'Terjadwal'
+  | 'Selesai'
+  | 'Batal'
+  | 'Berubah'
+  | 'Upcoming Session'
+  | 'In Progress'
+  | 'Completed';
+
 export interface OvertimeEvent {
   id: string;
   title: string;
@@ -35,7 +44,7 @@ export interface OvertimeEvent {
   assignedMemberIds: string[];
   assignedMemberNames: string[];
   passMemberIds?: string[]; // members who passed/berhalangan
-  status?: 'Upcoming Session' | 'In Progress' | 'Completed';
+  status?: EventStatus;
   notes?: string;
   room?: string; // Nama Ruangan / Lokasi kegiatan
   taskType?: string; // Nama Jenis Tugas (e.g. "Lembur GR (Gladi Resik)", "Support Agenda")

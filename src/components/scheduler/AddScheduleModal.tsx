@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/shadcn-studio/date-picker';
-import { RankedMember, TaskCategory, OvertimeEvent, TaskType, Room } from '@/types/overtime';
+import { RankedMember, TaskCategory, OvertimeEvent, TaskType, Room, EventStatus } from '@/types/overtime';
 
 const DEFAULT_TASK_TYPES: TaskType[] = [
   { id: 'tt-1', name: 'Pemeliharaan Studio Multimedia', category: 'Tugas Pokok' },
@@ -112,6 +112,7 @@ export function AddScheduleModal({
 
   // 5. Kategori Tugas: Tugas Pokok (Tupoksi) vs Tugas Support (Perbantuan)
   const [taskCategory, setTaskCategory] = React.useState<TaskCategory>('Tugas Pokok');
+  const [status, setStatus] = React.useState<EventStatus>('Terjadwal');
 
   // 6. Agenda / Uraian Tugas
   const [agenda, setAgenda] = React.useState('');
@@ -182,6 +183,7 @@ export function AddScheduleModal({
         setStartTime(start);
         setEndTime(end);
         setTaskCategory(eventToEdit.taskCategory || 'Tugas Pokok');
+        setStatus((eventToEdit.status as EventStatus) || 'Terjadwal');
         setAgenda(eventToEdit.agenda || eventToEdit.notes || '');
         setSelectedRoomName(eventToEdit.room || '');
         if (eventToEdit.pdfFileName && eventToEdit.pdfFileKey) {
@@ -215,6 +217,7 @@ export function AddScheduleModal({
         setStartTime('17:00');
         setEndTime('21:00');
         setTaskCategory('Tugas Pokok');
+        setStatus('Terjadwal');
         setAgenda('Maintenance & Standby Operasional Studio Multimedia');
         setExistingPdf(null);
         setPdfFile(null);
@@ -527,7 +530,7 @@ export function AddScheduleModal({
         pdfFileKey: uploadedPdf ? uploadedPdf.key : null,
         pdfFileSize: uploadedPdf ? uploadedPdf.size : null,
         pdfUploadedAt: uploadedPdf ? new Date().toISOString() : null,
-        status: eventToEdit?.status || 'Upcoming Session',
+        status: status || eventToEdit?.status || 'Terjadwal',
       };
       if (eventToEdit) {
         payload.id = eventToEdit.id;
@@ -1142,6 +1145,68 @@ export function AddScheduleModal({
               >
                 <span>🤝</span>
                 <span>Tugas Support (Perbantuan)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Status Jadwal Kegiatan (Terjadwal, Selesai, Berubah, Batal) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-[#1E293B] dark:text-slate-200">
+                Status Jadwal Kegiatan
+              </label>
+              <span className="text-[10px] text-[#64748B] dark:text-slate-400">
+                Status pelaksanaan agenda
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1 rounded-xl bg-[#F4F7FA] dark:bg-[#050505] border border-slate-200 dark:border-[#222222]">
+              <button
+                type="button"
+                onClick={() => setStatus('Terjadwal')}
+                className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  status === 'Terjadwal' || status === 'Upcoming Session'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-[#64748B] dark:text-slate-400 hover:text-emerald-600'
+                }`}
+              >
+                <span className="size-1.5 rounded-full bg-emerald-300" />
+                <span>Terjadwal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatus('Selesai')}
+                className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  status === 'Selesai' || status === 'Completed'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-[#64748B] dark:text-slate-400 hover:text-blue-600'
+                }`}
+              >
+                <span className="size-1.5 rounded-full bg-blue-300" />
+                <span>Selesai</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatus('Berubah')}
+                className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  status === 'Berubah'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'text-[#64748B] dark:text-slate-400 hover:text-amber-500'
+                }`}
+              >
+                <span className="size-1.5 rounded-full bg-amber-200" />
+                <span>Berubah</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatus('Batal')}
+                className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  status === 'Batal'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'text-[#64748B] dark:text-slate-400 hover:text-rose-600'
+                }`}
+              >
+                <span className="size-1.5 rounded-full bg-rose-300" />
+                <span>Batal</span>
               </button>
             </div>
           </div>

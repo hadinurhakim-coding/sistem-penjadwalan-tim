@@ -360,12 +360,22 @@ export function MonthlyCalendarView({
             {/* Status Badge */}
             <div className="flex items-center gap-2 py-1">
               <span className="text-xs text-[#64748B] font-normal">Status:</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#E0F2FE] text-[#005596] border border-[#00A2E9]/40">
-                {activePopoverEvent.status === 'Completed'
+              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                activePopoverEvent.status === 'Batal'
+                  ? 'bg-rose-50 text-rose-600 border-rose-200'
+                  : activePopoverEvent.status === 'Berubah'
+                  ? 'bg-amber-50 text-amber-600 border-amber-200'
+                  : activePopoverEvent.status === 'Completed' || activePopoverEvent.status === 'Selesai'
+                  ? 'bg-blue-50 text-blue-600 border-blue-200'
+                  : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+              }`}>
+                {activePopoverEvent.status === 'Batal'
+                  ? 'Batal'
+                  : activePopoverEvent.status === 'Berubah'
+                  ? 'Berubah'
+                  : activePopoverEvent.status === 'Completed' || activePopoverEvent.status === 'Selesai'
                   ? 'Selesai'
-                  : activePopoverEvent.status === 'In Progress'
-                  ? 'Sedang Berjalan'
-                  : 'Sesi Terjadwal'}
+                  : 'Terjadwal'}
               </span>
             </div>
 

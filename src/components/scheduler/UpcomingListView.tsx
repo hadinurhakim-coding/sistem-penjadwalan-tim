@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { OvertimeEvent } from '@/types/overtime';
+import { OvertimeEvent, EventStatus } from '@/types/overtime';
+import { ScheduleDetailModal } from '@/components/scheduler/ScheduleDetailModal';
 import {
   Search,
   FileText,
@@ -23,6 +24,9 @@ import {
   X,
   ArrowUpDown,
   CheckCircle2,
+  Eye,
+  Clock4,
+  Ban,
 } from 'lucide-react';
 
 interface UpcomingListViewProps {
@@ -42,7 +46,9 @@ export function UpcomingListView({
 }: UpcomingListViewProps) {
   // Search & Filter States
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [filterCategory, setFilterCategory] = React.useState<'ALL' | 'Scheduled' | 'Completed' | 'Tugas Pokok' | 'Tugas Support'>('ALL');
+  const [filterCategory, setFilterCategory] = React.useState<
+    'ALL' | 'Terjadwal' | 'Selesai' | 'Batal' | 'Berubah' | 'Tugas Pokok' | 'Tugas Support'
+  >('ALL');
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [isCompact, setIsCompact] = React.useState(false);
@@ -50,6 +56,9 @@ export function UpcomingListView({
   // Pagination States
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
+
+  // Detail Modal State
+  const [selectedDetailEvent, setSelectedDetailEvent] = React.useState<OvertimeEvent | null>(null);
 
   // Row Action Dropdown & Delete State
   const [activeMenuId, setActiveMenuId] = React.useState<string | null>(null);
@@ -100,6 +109,66 @@ export function UpcomingListView({
     }
   };
 
+  // Quick Status Update
+  const handleQuickUpdateStatus = async (eventId: string, newStatus: EventStatus) => {
+    try {
+      const res = await fetch('/api/overtime', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: eventId,
+          status: newStatus,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Gagal memperbarui status agenda.');
+      }
+
+      setActiveMenuId(null);
+      if (onDataRefreshed) {
+        onDataRefreshed(json.data);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengubah status');
+    }
+  };
+
+  // Helper status badge renderer
+  const renderStatusBadge = (status?: string) => {
+    if (status === 'Batal') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60">
+          <span className="size-1.5 rounded-full bg-rose-500" />
+          <span>Batal</span>
+        </span>
+      );
+    }
+    if (status === 'Berubah') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
+          <span className="size-1.5 rounded-full bg-amber-500" />
+          <span>Berubah</span>
+        </span>
+      );
+    }
+    if (status === 'Completed' || status === 'Selesai') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
+          <span className="size-1.5 rounded-full bg-blue-500" />
+          <span>Selesai</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
+        <span className="size-1.5 rounded-full bg-emerald-500" />
+        <span>Active</span>
+      </span>
+    );
+  };
+
   // Filtered and Sorted Events
   const filteredEvents = React.useMemo(() => {
     return events
@@ -111,18 +180,27 @@ export function UpcomingListView({
           const matchAgenda = evt.agenda?.toLowerCase().includes(q);
           const matchMember = evt.assignedMemberNames?.some((n) => n.toLowerCase().includes(q));
           const matchCategory = evt.taskCategory?.toLowerCase().includes(q);
+          const matchTaskType = evt.taskType?.toLowerCase().includes(q);
+          const matchRoom = evt.room?.toLowerCase().includes(q);
+          const matchStatus = evt.status?.toLowerCase().includes(q);
           const matchId = evt.id?.toLowerCase().includes(q);
-          if (!matchTitle && !matchAgenda && !matchMember && !matchCategory && !matchId) {
+          if (!matchTitle && !matchAgenda && !matchMember && !matchCategory && !matchTaskType && !matchRoom && !matchStatus && !matchId) {
             return false;
           }
         }
 
         // Category / Status Filter
-        if (filterCategory === 'Scheduled') {
-          return evt.status !== 'Completed';
+        if (filterCategory === 'Terjadwal') {
+          return !evt.status || evt.status === 'Terjadwal' || evt.status === 'Upcoming Session' || evt.status === 'In Progress';
         }
-        if (filterCategory === 'Completed') {
-          return evt.status === 'Completed';
+        if (filterCategory === 'Selesai') {
+          return evt.status === 'Completed' || evt.status === 'Selesai';
+        }
+        if (filterCategory === 'Batal') {
+          return evt.status === 'Batal';
+        }
+        if (filterCategory === 'Berubah') {
+          return evt.status === 'Berubah';
         }
         if (filterCategory === 'Tugas Pokok') {
           return !evt.taskCategory || evt.taskCategory === 'Tugas Pokok';
@@ -215,8 +293,10 @@ export function UpcomingListView({
             >
               <span>
                 {filterCategory === 'ALL' && 'Semua Status'}
-                {filterCategory === 'Scheduled' && 'Sesi Terjadwal'}
-                {filterCategory === 'Completed' && 'Selesai'}
+                {filterCategory === 'Terjadwal' && 'Terjadwal (Active)'}
+                {filterCategory === 'Selesai' && 'Selesai'}
+                {filterCategory === 'Batal' && 'Batal'}
+                {filterCategory === 'Berubah' && 'Berubah'}
                 {filterCategory === 'Tugas Pokok' && 'Tugas Pokok'}
                 {filterCategory === 'Tugas Support' && 'Tugas Support'}
               </span>
@@ -224,7 +304,7 @@ export function UpcomingListView({
             </button>
 
             {isFilterOpen && (
-              <div className="absolute right-0 top-full mt-1.5 z-40 w-48 rounded-xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-zinc-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute right-0 top-full mt-1.5 z-40 w-52 rounded-xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-zinc-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
                 <button
                   type="button"
                   onClick={() => {
@@ -235,34 +315,72 @@ export function UpcomingListView({
                     filterCategory === 'ALL' ? 'text-[#00A2E9] dark:text-[#38BDF8] font-bold bg-[#E0F2FE]/40 dark:bg-zinc-800' : 'text-slate-700 dark:text-zinc-300'
                   }`}
                 >
-                  <span>Semua Status</span>
+                  <span>Semua Status (Semua Agenda)</span>
                   {filterCategory === 'ALL' && <CheckCircle2 className="size-3.5" />}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setFilterCategory('Scheduled');
+                    setFilterCategory('Terjadwal');
                     setIsFilterOpen(false);
                   }}
                   className={`w-full text-left px-3.5 py-2 font-medium hover:bg-slate-50 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer flex items-center justify-between ${
-                    filterCategory === 'Scheduled' ? 'text-[#00A2E9] dark:text-[#38BDF8] font-bold bg-[#E0F2FE]/40 dark:bg-zinc-800' : 'text-slate-700 dark:text-zinc-300'
+                    filterCategory === 'Terjadwal' ? 'text-[#00A2E9] dark:text-[#38BDF8] font-bold bg-[#E0F2FE]/40 dark:bg-zinc-800' : 'text-slate-700 dark:text-zinc-300'
                   }`}
                 >
-                  <span>Sesi Terjadwal</span>
-                  {filterCategory === 'Scheduled' && <CheckCircle2 className="size-3.5" />}
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-1.5 rounded-full bg-emerald-500" />
+                    <span>Terjadwal (Active)</span>
+                  </span>
+                  {filterCategory === 'Terjadwal' && <CheckCircle2 className="size-3.5" />}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setFilterCategory('Completed');
+                    setFilterCategory('Selesai');
                     setIsFilterOpen(false);
                   }}
                   className={`w-full text-left px-3.5 py-2 font-medium hover:bg-slate-50 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer flex items-center justify-between ${
-                    filterCategory === 'Completed' ? 'text-[#00A2E9] dark:text-[#38BDF8] font-bold bg-[#E0F2FE]/40 dark:bg-zinc-800' : 'text-slate-700 dark:text-zinc-300'
+                    filterCategory === 'Selesai' ? 'text-[#00A2E9] dark:text-[#38BDF8] font-bold bg-[#E0F2FE]/40 dark:bg-zinc-800' : 'text-slate-700 dark:text-zinc-300'
                   }`}
                 >
-                  <span>Selesai</span>
-                  {filterCategory === 'Completed' && <CheckCircle2 className="size-3.5" />}
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-1.5 rounded-full bg-blue-500" />
+                    <span>Selesai</span>
+                  </span>
+                  {filterCategory === 'Selesai' && <CheckCircle2 className="size-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterCategory('Berubah');
+                    setIsFilterOpen(false);
+                  }}
+                  className={`w-full text-left px-3.5 py-2 font-medium hover:bg-slate-50 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer flex items-center justify-between ${
+                    filterCategory === 'Berubah' ? 'text-[#00A2E9] dark:text-[#38BDF8] font-bold bg-[#E0F2FE]/40 dark:bg-zinc-800' : 'text-slate-700 dark:text-zinc-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-1.5 rounded-full bg-amber-500" />
+                    <span>Berubah</span>
+                  </span>
+                  {filterCategory === 'Berubah' && <CheckCircle2 className="size-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterCategory('Batal');
+                    setIsFilterOpen(false);
+                  }}
+                  className={`w-full text-left px-3.5 py-2 font-medium hover:bg-slate-50 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer flex items-center justify-between ${
+                    filterCategory === 'Batal' ? 'text-[#00A2E9] dark:text-[#38BDF8] font-bold bg-[#E0F2FE]/40 dark:bg-zinc-800' : 'text-slate-700 dark:text-zinc-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-1.5 rounded-full bg-rose-500" />
+                    <span>Batal</span>
+                  </span>
+                  {filterCategory === 'Batal' && <CheckCircle2 className="size-3.5" />}
                 </button>
                 <div className="h-px bg-slate-100 dark:bg-zinc-800 my-1" />
                 <button
@@ -400,14 +518,29 @@ export function UpcomingListView({
                     }`}
                   >
                     {/* # Code */}
-                    <td className="py-3 px-4 font-extrabold text-[#0A2540] dark:text-white whitespace-nowrap">
-                      {code}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDetailEvent(evt)}
+                        className="font-extrabold text-[#0A2540] dark:text-white hover:text-[#00A2E9] dark:hover:text-[#38BDF8] transition-colors cursor-pointer flex items-center gap-1 group/code"
+                        title="Klik untuk melihat detail agenda"
+                      >
+                        <span>{code}</span>
+                        <Eye className="size-3 opacity-0 group-hover/code:opacity-100 text-[#00A2E9] transition-opacity" />
+                      </button>
                     </td>
 
                     {/* Description (Title + Agenda + Room) */}
                     <td className="py-3 px-4 max-w-xs sm:max-w-md">
                       <div className="font-bold text-[#0A2540] dark:text-white leading-snug line-clamp-1 flex items-center gap-1.5 flex-wrap">
-                        <span>{evt.title}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDetailEvent(evt)}
+                          className="hover:text-[#00A2E9] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left truncate"
+                          title="Klik untuk melihat detail agenda"
+                        >
+                          {evt.title}
+                        </button>
                         {evt.room && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#005596] dark:text-[#38BDF8] bg-[#E0F2FE] dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-[#00A2E9]/20">
                             <MapPin className="size-2.5" />
@@ -488,23 +621,25 @@ export function UpcomingListView({
                       </div>
                     </td>
 
-                    {/* Status badge matching Active / Inactive in Gambar 1 */}
+                    {/* Status badge matching Active, Selesai, Batal, Berubah */}
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                          evt.status === 'Completed'
-                            ? 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-200/60 dark:border-zinc-700'
-                            : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60'
-                        }`}
-                      >
-                        {evt.status === 'Completed' ? 'Selesai' : 'Active'}
-                      </span>
+                      {renderStatusBadge(evt.status)}
                     </td>
 
                     {/* Actions matching the 3-dots in Gambar 1 */}
                     <td className="py-3 px-4 text-right whitespace-nowrap relative">
                       <div className="inline-flex items-center gap-1 justify-end row-action-menu">
-                        {/* Direct Quick Action Buttons */}
+                        {/* Direct Detail View Action Button */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDetailEvent(evt)}
+                          className="p-1 rounded-md text-slate-400 hover:text-[#00A2E9] dark:hover:text-[#38BDF8] hover:bg-[#E0F2FE]/50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                          title="Lihat Detail Agenda"
+                        >
+                          <Eye className="size-3.5" />
+                        </button>
+
+                        {/* Direct Quick Edit Action Button */}
                         {onEditSchedule && (
                           <button
                             type="button"
@@ -515,6 +650,8 @@ export function UpcomingListView({
                             <Pencil className="size-3.5" />
                           </button>
                         )}
+
+                        {/* Direct Quick Delete Action Button */}
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteEvent(evt)}
@@ -535,7 +672,18 @@ export function UpcomingListView({
 
                         {/* Floating 3 Dots Menu */}
                         {activeMenuId === evt.id && (
-                          <div className="absolute right-4 top-full mt-1 z-30 w-36 rounded-xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-zinc-800 shadow-xl py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100">
+                          <div className="absolute right-4 top-full mt-1 z-30 w-44 rounded-xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-zinc-800 shadow-xl py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setSelectedDetailEvent(evt);
+                              }}
+                              className="w-full px-3 py-1.5 flex items-center gap-2 text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer font-medium"
+                            >
+                              <Eye className="size-3 text-[#00A2E9]" />
+                              <span>Lihat Detail Agenda</span>
+                            </button>
                             {onEditSchedule && (
                               <button
                                 type="button"
@@ -559,6 +707,43 @@ export function UpcomingListView({
                             >
                               <Trash2 className="size-3" />
                               <span>Hapus Jadwal</span>
+                            </button>
+
+                            <div className="h-px bg-slate-100 dark:bg-zinc-800 my-1" />
+                            <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                              Ubah Status
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickUpdateStatus(evt.id, 'Terjadwal')}
+                              className="w-full px-3 py-1.5 flex items-center gap-2 text-slate-700 dark:text-zinc-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-600 transition-colors cursor-pointer text-[11px]"
+                            >
+                              <CheckCircle2 className="size-3 text-emerald-500" />
+                              <span>Tandai Terjadwal</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickUpdateStatus(evt.id, 'Selesai')}
+                              className="w-full px-3 py-1.5 flex items-center gap-2 text-slate-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 transition-colors cursor-pointer text-[11px]"
+                            >
+                              <Clock4 className="size-3 text-blue-500" />
+                              <span>Tandai Selesai</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickUpdateStatus(evt.id, 'Berubah')}
+                              className="w-full px-3 py-1.5 flex items-center gap-2 text-slate-700 dark:text-zinc-200 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-600 transition-colors cursor-pointer text-[11px]"
+                            >
+                              <AlertCircle className="size-3 text-amber-500" />
+                              <span>Tandai Berubah</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickUpdateStatus(evt.id, 'Batal')}
+                              className="w-full px-3 py-1.5 flex items-center gap-2 text-slate-700 dark:text-zinc-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 transition-colors cursor-pointer text-[11px]"
+                            >
+                              <Ban className="size-3 text-rose-500" />
+                              <span>Tandai Batal</span>
                             </button>
                           </div>
                         )}
@@ -697,6 +882,24 @@ export function UpcomingListView({
           </div>
         </div>
       </div>
+
+      {/* Action Detail Modal */}
+      <ScheduleDetailModal
+        isOpen={selectedDetailEvent !== null}
+        onClose={() => setSelectedDetailEvent(null)}
+        event={selectedDetailEvent}
+        onEditSchedule={(evt) => {
+          setSelectedDetailEvent(null);
+          if (onEditSchedule) onEditSchedule(evt);
+        }}
+        onDeleteSchedule={(evt) => {
+          setSelectedDetailEvent(null);
+          setConfirmDeleteEvent(evt);
+        }}
+        onDataRefreshed={(data) => {
+          if (onDataRefreshed) onDataRefreshed(data);
+        }}
+      />
     </div>
   );
 }

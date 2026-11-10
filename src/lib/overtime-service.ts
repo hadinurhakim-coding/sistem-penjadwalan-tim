@@ -12,6 +12,7 @@ import {
   TaskCategory,
   TaskType,
   Room,
+  EventStatus,
 } from '@/types/overtime';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -302,12 +303,18 @@ export async function getFullOvertimeData(): Promise<OvertimeApiResponse> {
 
 // Recalculate member total hours, sessions, and last overtime date
 // NOTE: Per requirement, any task containing "Lembur" or "GR (Gladi Resik)" counts towards overtime balance & fair queue!
+// ATURAN: Jika status agenda "Batal", maka penugasan TIDAK dihitung ke jam lembur.
 export function recalculateMemberTotals(store: OvertimeStore) {
   const memberMap: Record<string, { hours: number; sessions: number; lastDate: string | null }> = {};
   for (const m of store.members) {
     memberMap[m.id] = { hours: 0, sessions: 0, lastDate: null };
   }
   for (const ev of store.events) {
+    // Agenda yang berstatus 'Batal' (dibatalkan) tidak dihitung ke akumulasi jam lembur
+    if (ev.status === 'Batal') {
+      continue;
+    }
+
     // Setiap kegiatan dengan kata "Lembur" atau "GR (Gladi Resik)" dihitung ke akumulasi jam lembur
     if (!isOvertimeEvent(ev)) {
       continue;
@@ -349,7 +356,7 @@ export async function recordOvertimeEvent(params: {
   returneesCount?: number;
   assignedMemberIds: string[];
   passMemberIds?: string[];
-  status?: 'Upcoming Session' | 'In Progress' | 'Completed';
+  status?: EventStatus;
   notes?: string;
   pdfFileName?: string;
   pdfFileKey?: string;
@@ -412,7 +419,7 @@ export async function recordOvertimeEvent(params: {
     assignedMemberIds,
     assignedMemberNames: assignedNames,
     passMemberIds: params.passMemberIds || [],
-    status: params.status || 'Upcoming Session',
+    status: params.status || 'Terjadwal',
     notes: params.notes || params.agenda || '',
     pdfFileName: params.pdfFileName,
     pdfFileKey: params.pdfFileKey,
@@ -473,7 +480,7 @@ export async function updateOvertimeEvent(params: {
   room?: string;
   agenda?: string;
   assignedMemberIds?: string[];
-  status?: 'Upcoming Session' | 'In Progress' | 'Completed';
+  status?: EventStatus;
   notes?: string;
   pdfFileName?: string;
   pdfFileKey?: string;

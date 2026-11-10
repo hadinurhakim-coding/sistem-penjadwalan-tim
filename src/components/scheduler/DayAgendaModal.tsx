@@ -184,12 +184,22 @@ export function DayAgendaModal({
 
                     {/* Action Buttons: Status Badge, Edit, and Delete */}
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#E0F2FE] text-[#005596] border border-[#00A2E9]/30">
-                        {evt.status === 'Completed'
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        evt.status === 'Batal'
+                          ? 'bg-rose-50 text-rose-600 border-rose-200'
+                          : evt.status === 'Berubah'
+                          ? 'bg-amber-50 text-amber-600 border-amber-200'
+                          : evt.status === 'Completed' || evt.status === 'Selesai'
+                          ? 'bg-blue-50 text-blue-600 border-blue-200'
+                          : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      }`}>
+                        {evt.status === 'Batal'
+                          ? 'Batal'
+                          : evt.status === 'Berubah'
+                          ? 'Berubah'
+                          : evt.status === 'Completed' || evt.status === 'Selesai'
                           ? 'Selesai'
-                          : evt.status === 'In Progress'
-                          ? 'Sedang Berjalan'
-                          : 'Sesi Terjadwal'}
+                          : 'Terjadwal'}
                       </span>
 
                       {/* Edit Button */}
