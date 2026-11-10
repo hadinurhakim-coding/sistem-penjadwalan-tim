@@ -407,7 +407,7 @@ export function AddScheduleModal({
   // Select task type (Gambar 1 flow)
   const handleSelectTaskType = (item: TaskType) => {
     setSelectedTaskTypeId(item.id);
-    setScheduleTitle(item.name);
+    // Cukup simpan jenis tugas, jangan timpa judul agenda yang diisi user (misal: "Colony Insight")
     setTaskCategory(item.category);
     setIsTaskTypeDropdownOpen(false);
   };
@@ -416,7 +416,6 @@ export function AddScheduleModal({
   const handleClearTaskType = (e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedTaskTypeId(null);
-    setScheduleTitle('');
   };
 
   // Save edited task type to Database table
@@ -463,7 +462,6 @@ export function AddScheduleModal({
         setTaskTypes(json.taskTypes);
         if (json.data) {
           setSelectedTaskTypeId(json.data.id);
-          setScheduleTitle(json.data.name);
           setTaskCategory(json.data.category);
         }
         setNewTaskTypeName('');
@@ -491,7 +489,6 @@ export function AddScheduleModal({
         setTaskTypes(json.taskTypes);
         if (selectedTaskTypeId === id) {
           setSelectedTaskTypeId(null);
-          setScheduleTitle('');
         }
       } else if (!json.success) {
         alert(json.error || 'Gagal menghapus jenis tugas');
@@ -1170,9 +1167,8 @@ export function AddScheduleModal({
               required
               value={scheduleTitle}
               onChange={(e) => setScheduleTitle(e.target.value)}
-              placeholder="Contoh: Pemeliharaan Studio Multimedia / Live Streaming BOD..."
+              placeholder="Cukup masukkan nama judul agenda (Contoh: Colony Insight)..."
               className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-[#222222] text-xs text-[#1E293B] dark:text-[#E2E8F0] placeholder-slate-400 focus:outline-none focus:border-[#00A2E9] focus:ring-1 focus:ring-[#00A2E9] bg-white dark:bg-black transition-colors"
-
             />
           </div>
 

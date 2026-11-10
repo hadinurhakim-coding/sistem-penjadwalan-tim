@@ -152,7 +152,25 @@ export function generateWAGBroadcastText(event: OvertimeEvent): string {
   const formattedEnd = end.replace(':', '.');
 
   // 4. Kegiatan / Judul acara
-  const kegiatan = event.title || event.agenda || '-';
+  // Otomatis gabungkan Jenis Tugas (Pilih Jenis Tugas) + Judul Acara jika ada
+  let rawTitle = (event.title || event.agenda || '-').trim();
+  const taskType = (event.taskType || '').trim();
+
+  let kegiatan = rawTitle;
+  if (taskType && rawTitle !== '-') {
+    const lowerTitle = rawTitle.toLowerCase();
+    const lowerTaskType = taskType.toLowerCase();
+
+    // Jika judul belum mengandung atau belum diawali jenis tugas, gabungkan secara otomatis
+    if (!lowerTitle.startsWith(lowerTaskType)) {
+      kegiatan = `${taskType} ${rawTitle}`;
+    }
+  }
+
+  // Pastikan diakhiri tanda titik sesuai format baku broadcast WAG
+  if (kegiatan !== '-' && !kegiatan.endsWith('.')) {
+    kegiatan = `${kegiatan}.`;
+  }
 
   // Format baku sesuai permintaan user
   return `Nama : ${names}

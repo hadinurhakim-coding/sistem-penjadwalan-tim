@@ -179,7 +179,14 @@ export function ScheduleDetailModal({
               </span>
             </div>
             <h3 className="text-base sm:text-lg font-bold text-[#0A2540] dark:text-white leading-snug">
-              {event.title}
+              {event.taskType && !event.title.toLowerCase().startsWith(event.taskType.toLowerCase()) ? (
+                <span>
+                  <span className="text-[#005596] dark:text-[#38BDF8] mr-1.5 font-bold">{event.taskType}</span>
+                  <span>{event.title}</span>
+                </span>
+              ) : (
+                <span>{event.title}</span>
+              )}
             </h3>
           </div>
           <button

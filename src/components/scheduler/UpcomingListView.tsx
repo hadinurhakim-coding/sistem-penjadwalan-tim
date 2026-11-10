@@ -559,7 +559,14 @@ export function UpcomingListView({
                           className="hover:text-[#00A2E9] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left truncate"
                           title="Klik untuk melihat detail agenda"
                         >
-                          {evt.title}
+                          {evt.taskType && !evt.title.toLowerCase().startsWith(evt.taskType.toLowerCase()) ? (
+                            <span>
+                              <span className="text-[#005596] dark:text-[#38BDF8] mr-1.5 font-bold">{evt.taskType}</span>
+                              <span>{evt.title}</span>
+                            </span>
+                          ) : (
+                            <span>{evt.title}</span>
+                          )}
                         </button>
                         {evt.room && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#005596] dark:text-[#38BDF8] bg-[#E0F2FE] dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-[#00A2E9]/20">
@@ -863,7 +870,14 @@ export function UpcomingListView({
                     onClick={() => setSelectedDetailEvent({ ...evt, status: getEffectiveEventStatus(evt) })}
                     className="font-bold text-sm text-[#0A2540] dark:text-white hover:text-[#00A2E9] dark:hover:text-[#38BDF8] transition-colors text-left leading-snug cursor-pointer line-clamp-2"
                   >
-                    {evt.title}
+                    {evt.taskType && !evt.title.toLowerCase().startsWith(evt.taskType.toLowerCase()) ? (
+                      <span>
+                        <span className="text-[#005596] dark:text-[#38BDF8] mr-1.5 font-bold">{evt.taskType}</span>
+                        <span>{evt.title}</span>
+                      </span>
+                    ) : (
+                      <span>{evt.title}</span>
+                    )}
                   </button>
 
                   {evt.room && (
