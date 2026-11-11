@@ -5,8 +5,15 @@ import {
   updateTaskType,
   deleteTaskType,
 } from '@/lib/overtime-service';
+import { requireApiAuth, requireApiMutation } from '@/lib/auth-guard';
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Verifikasi Sesi (F-01)
+  const authResult = await requireApiAuth(request);
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const taskTypes = await getTaskTypes();
     return NextResponse.json({ success: true, data: taskTypes });
@@ -19,6 +26,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // Verifikasi Sesi (F-01), Anti-CSRF & Content-Type (O-01)
+  const authResult = await requireApiMutation(request);
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const body = await request.json();
     const { name, category } = body;
@@ -39,6 +52,12 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  // Verifikasi Sesi (F-01), Anti-CSRF & Content-Type (O-01)
+  const authResult = await requireApiMutation(request);
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const body = await request.json();
     const { id, name, category } = body;
@@ -65,6 +84,12 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  // Verifikasi Sesi (F-01), Anti-CSRF & Content-Type (O-01)
+  const authResult = await requireApiMutation(request);
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     let id: string | null = null;
     const url = new URL(request.url);

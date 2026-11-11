@@ -21,9 +21,9 @@ export function proxy(request: NextRequest) {
 
   // Jika belum login dan mengakses halaman yang diproteksi -> arahkan ke /login
   if (!isAuthenticated) {
-    if (pathname.startsWith('/api/overtime') || pathname.startsWith('/api/task-types')) {
+    if (pathname.startsWith('/api/')) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'Sesi login tidak valid atau telah berakhir.' },
+        { success: false, error: 'Unauthorized', message: 'Sesi login tidak valid atau telah berakhir.' },
         { status: 401 }
       );
     }

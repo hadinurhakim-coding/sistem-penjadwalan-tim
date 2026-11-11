@@ -1,7 +1,19 @@
 import { NextResponse } from 'next/server';
-import { addTeamMember, updateTeamMember, deleteTeamMember, getFullOvertimeData } from '@/lib/overtime-service';
+import {
+  addTeamMember,
+  updateTeamMember,
+  deleteTeamMember,
+  getFullOvertimeData,
+} from '@/lib/overtime-service';
+import { requireApiMutation } from '@/lib/auth-guard';
 
 export async function POST(request: Request) {
+  // Verifikasi Sesi (F-01), Anti-CSRF & Content-Type (O-01)
+  const authResult = await requireApiMutation(request);
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const body = await request.json();
     const { name, role } = body;
@@ -24,6 +36,12 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  // Verifikasi Sesi (F-01), Anti-CSRF & Content-Type (O-01)
+  const authResult = await requireApiMutation(request);
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const body = await request.json();
     const { id, name, role } = body;
@@ -46,6 +64,12 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  // Verifikasi Sesi (F-01), Anti-CSRF & Content-Type (O-01)
+  const authResult = await requireApiMutation(request);
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
   try {
     const body = await request.json();
     const { id } = body;

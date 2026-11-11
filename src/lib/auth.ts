@@ -8,10 +8,9 @@ export const auth = betterAuth({
     // SISTEM 1 PINTU DI NEON SAJA:
     // Pendaftaran akun melalui API publik/halaman web dinonaktifkan secara total.
     // Akun HANYA dapat didaftarkan langsung oleh Administrator melalui Neon DB Console
-    // atau skrip offline scripts/create-neon-user.mjs
-    signUp: {
-      enabled: false,
-    },
+    // atau skrip offline scripts/create-neon-user.mjs.
+    // Better Auth 1.7.19 menggunakan disableSignUp: true
+    disableSignUp: true,
   },
   secret: process.env.BETTER_AUTH_SECRET,
   session: {

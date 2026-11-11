@@ -1,10 +1,16 @@
 import { Suspense } from 'react';
 import { connection } from 'next/server';
+import { redirect } from 'next/navigation';
 import { MainDashboard } from '@/components/scheduler/MainDashboard';
 import { getFullOvertimeData } from '@/lib/overtime-service';
+import { getServerSession } from '@/lib/auth-guard';
 
 async function DashboardContainer() {
   await connection();
+  const session = await getServerSession();
+  if (!session) {
+    redirect('/login');
+  }
   const initialData = await getFullOvertimeData();
   return <MainDashboard initialData={initialData} />;
 }
